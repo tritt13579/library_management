@@ -1,7 +1,22 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
+
+// icon
+import {
+  MagnifyingGlassIcon,
+  BookOpenIcon,
+  QueueListIcon,
+  HeartIcon,
+  Bars3Icon,
+  XMarkIcon,
+} from "@heroicons/react/24/solid";
 
 const ReaderHomePage = () => {
-  return <div>ReaderHomePage</div>;
+
+  return (
+    <p>Home</p>
+  );
 };
 
 export default ReaderHomePage;
