@@ -151,7 +151,7 @@ const BooksPage = () => {
   };
 
   return (
-    <div className="space-y-10 p-6">
+    <div className="p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -496,7 +496,7 @@ const BooksPage = () => {
 
         return (
           <div key={category}>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mt-6 mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-primary">{category}</h2>
               {booksInCategory.length > 4 && (
                 <button
@@ -508,7 +508,7 @@ const BooksPage = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4 mt-6">
               {visibleBooks.map((book, index) => (
                 <div key={index} onClick={() => handleCardClick(book)}>
                   <BookCard

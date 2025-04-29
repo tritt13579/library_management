@@ -56,7 +56,7 @@ const ReaderHomePage = () => {
 
       {/* ===== MARQUEE ===== */}
       <div className="overflow-hidden whitespace-nowrap flex-1">
-        <div className="animate-marquee inline-block py-2 text-sm text-gray-800">
+        <div className="animate-marquee inline-block py-2 text-sm text-primary">
           <span className="mx-6">
             Hoạt động hưởng ứng Tuần lễ Quốc gia phòng chống thiên tai năm 2025
           </span>
@@ -91,11 +91,11 @@ const ReaderHomePage = () => {
       </div>
 
       {/* ===== THƯ VIỆN + DANH MỤC ===== */}
-      <div className="bg-white w-full py-8 px-4 md:px-12">
+      <div className="bg-background w-full py-8 px-4 md:px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-1 gap-y-4 items-start">
           {/* Cột bên trái - Thư viện */}
           <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">THƯ VIỆN TỈNH KHÁNH HÒA</h2>
+            <h2 className="text-primary text-2xl md:text-3xl font-bold mb-4">THƯ VIỆN TỈNH KHÁNH HÒA</h2>
             <div className="relative w-full max-w-md mx-auto md:mx-0">
               <img
                 src="/images/banner/banner2.png"
