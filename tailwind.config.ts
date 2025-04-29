@@ -69,7 +69,17 @@ const config: Config = {
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
   			}
-  		}
+  		},
+		animation: {
+			marquee: 'marquee 30s linear infinite',
+		},
+		keyframes: {
+			marquee: {
+			  '0%': { transform: 'translateX(100%)' },
+			  '100%': { transform: 'translateX(-100%)' },
+			},
+		},
+	  
   	}
   },
   plugins: [require("tailwindcss-animate")],
