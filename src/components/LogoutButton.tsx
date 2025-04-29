@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { describe } from "node:test";
 import { useRouter } from "next/navigation";
+import { logOutAction } from "@/actions/users";
 
 const LogoutButton = () => {
   const { toast } = useToast();
@@ -16,9 +17,7 @@ const LogoutButton = () => {
   const handleLogout = async () => {
     setLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const errorMessage = null;
+    const { errorMessage } = await logOutAction();
 
     if (!errorMessage) {
       toast({

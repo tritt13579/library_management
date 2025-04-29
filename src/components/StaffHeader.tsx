@@ -1,13 +1,13 @@
-import { shadow } from "@/styles/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import DarkModeToggle from "./DarkModeToggle";
 import LogoutButton from "./LogoutButton";
 import { SidebarTrigger } from "./ui/sidebar";
+import { getUser } from "@/auth/server";
 
-const StaffHeader = () => {
-  const user = 1;
+async function StaffHeader() {
+  const user = await getUser();
 
   return (
     <header className="flex h-16 w-full items-center justify-between border-b border-border bg-background px-6 shadow-sm">
@@ -38,6 +38,6 @@ const StaffHeader = () => {
       </div>
     </header>
   );
-};
+}
 
 export default StaffHeader;
