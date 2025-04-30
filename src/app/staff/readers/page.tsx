@@ -19,6 +19,10 @@ const ReadersPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
+  const [isExtendOpen, setIsExtendOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const readersPerPage = 6;
 
@@ -126,7 +130,31 @@ const ReadersPage = () => {
   }
   const closeCard = () => setIsCardOpen(false);
 
+  const handleExtend = () => {
+    setIsExtendOpen(true);
+    setIsCardOpen(false);
+    setIsDetailOpen(false);
+  }
+  const closeExtend = () => setIsExtendOpen(false)
 
+  const handleCreate = () => {
+    setIsCreateOpen(true);
+    setIsExtendOpen(false);
+    setIsCardOpen(false);
+    setIsDetailOpen(false);
+  }
+  const closeCreate = () => {
+    setIsCreateOpen(false)
+    setIsEditOpen(false)
+  } 
+
+  const handleEdit = () => {
+    setIsEditOpen(true)
+    setIsCreateOpen(false);
+    setIsExtendOpen(false);
+    setIsCardOpen(false);
+    setIsDetailOpen(false);
+  }
 
   return (
     <div className="p-6">
@@ -185,6 +213,7 @@ const ReadersPage = () => {
           <FilterButton
             icon={<CreditCardIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Tạo thẻ"
+            onClick={handleCreate}
           />
           <FilterButton
             icon={<QueueListIcon className="h-4 w-4 text-[#0071BC]" />}
@@ -213,6 +242,7 @@ const ReadersPage = () => {
           <FilterButton
             icon={<CreditCardIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Tạo thẻ"
+            onClick={handleCreate}
           />
           <FilterButton
             icon={<QueueListIcon className="h-4 w-4 text-[#0071BC]" />}
@@ -240,16 +270,16 @@ const ReadersPage = () => {
                 <p><strong className="text-primary">Địa chỉ:</strong> 123 Đường ABC, Quận 1, TP.HCM</p>
               </div>
               <div className="mt-6 flex space-x-3">
-                <button onClick={closeModal} className="rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]">Đóng</button>
-                <button onClick={handleCard} className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]">
+                <button onClick={closeModal} className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">Đóng</button>
+                <button onClick={handleCard} className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
                   <CreditCardIcon className="h-4 w-4" />
                   <span>Thẻ</span>
                 </button>
-                <button className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]">
+                <button onClick={handleEdit} className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
                   <PencilSquareIcon className="h-4 w-4" />
                   <span>Sửa</span>
                 </button>
-                <button className="flex items-center space-x-2 rounded-md bg-destructive px-4 py-2 text-white hover:bg-red-700">
+                <button className="flex items-center space-x-2 rounded-md bg-destructive px-4 py-2 text-primary-foreground hover:bg-red-700">
                   <TrashIcon className="h-4 w-4" />
                   <span>Xóa</span>
                 </button>
@@ -262,15 +292,107 @@ const ReadersPage = () => {
         </div>
       )}
 
+      {/* TẠO THẺ - CHỈNH SỬA */}
+      {(isCreateOpen || isEditOpen) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
+          <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
+            <h2 className="mb-4 text-2xl font-semibold text-primary">
+            {isCreateOpen ? "Thêm độc giả" : "Chỉnh sửa"}
+            </h2>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Họ độc giả"
+                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+                />
+                <input
+                  type="text"
+                  placeholder="Tên độc giả"
+                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <label className="mb-1 text-sm font-medium text-gray-700">Ngày sinh</label>
+                  <input
+                    type="date"
+                    className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+                  />
+                </div>
+                <select
+                  defaultValue=""
+                  className="self-end rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+                >
+                  <option value="" disabled>
+                    Chọn giới tính
+                  </option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                </select>
+              </div>
+              <input
+                type="email"
+                placeholder="Email"
+                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              />
+              <input
+                type="text"
+                placeholder="Số điện thoại"
+                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              />
+              <input
+                type="text"
+                placeholder="Địa chỉ"
+                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <select className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]">
+                  <option value="">Chọn loại thẻ</option>
+                  <option value="Mượn">Thẻ mượn</option>
+                  <option value="Đọc">Thẻ đọc</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Hạn mức (VD: 200000)"
+                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-1 text-sm font-medium text-gray-700">Ảnh thẻ</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="rounded-md border border-gray-300 bg-input px-4 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-[#0071BC] file:px-4 file:py-2 file:text-white hover:file:bg-[#005f9e]"
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={closeCreate}
+                className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
+              >
+                Hủy
+              </button>
+              <button className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-[#005f9e]">
+                Lưu độc giả
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* THẺ */}
       {isCardOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="flex max-h-[90vh] w-5/6 max-w-xl flex-col overflow-y-auto rounded-lg bg-background p-6">
       
             {/* Khung thẻ */}
-            <div className="relative w-full rounded-xl border bg-white p-5 shadow-lg">
+            <div className="relative w-full rounded-xl border bg-background p-5 shadow-lg">
               <div className="flex items-start gap-6">
           
-                {/* Ảnh chữ nhật đứng */}
+                {/* Ảnh */}
                 <div className="flex-shrink-0">
                   <img
                     src="images/logo/avatar.jpg"
@@ -293,7 +415,7 @@ const ReadersPage = () => {
             </div>
 
             {/* Trạng thái + giao dịch */}
-            <div className="mt-4 w-full rounded-md border bg-gray-50 p-4 text-sm shadow-sm">
+            <div className="mt-4 w-full rounded-md border bg-background p-4 text-sm shadow-sm">
               <p className="text-gray-700">
                 <strong className="text-primary">Trạng thái thẻ:</strong> Còn hạn
               </p>
@@ -306,15 +428,43 @@ const ReadersPage = () => {
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={closeCard}
-                className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
+                className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
               >
                 Đóng
               </button>
               <button
-                className="min-h-[44px] flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
+                className="min-h-[44px] flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
+                onClick={handleExtend}
               >
                 <CalendarDaysIcon className="h-5 w-5" />
                 <span>Gia hạn</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GIA HẠN */}
+      {isExtendOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-primary">Gia hạn thẻ</h3>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Chọn ngày hết hạn mới</label>
+            <input
+              type="date"
+              className="mb-4 w-full bg-background rounded border px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none"
+            />
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={closeExtend}
+                className="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Hủy
+              </button>
+              <button
+                className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-[#005f9e]"
+              >
+                Xác nhận
               </button>
             </div>
           </div>

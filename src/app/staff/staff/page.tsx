@@ -333,7 +333,7 @@ const StaffPage = () => {
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
-          className="px-3 py-1 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+          className="px-3 py-1 text-sm rounded border border-gray-300 text-primary hover:bg-gray-100 disabled:opacity-50"
         >
           Trước
         </button>
@@ -355,7 +355,7 @@ const StaffPage = () => {
         <button
           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+          className="px-3 py-1 text-sm rounded border border-gray-300 text-primary hover:bg-gray-100 disabled:opacity-50"
         >
           Tiếp
         </button>
