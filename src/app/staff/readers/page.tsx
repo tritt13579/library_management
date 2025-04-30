@@ -7,6 +7,9 @@ import {
   CreditCardIcon,
   QueueListIcon,
   BellIcon,
+  TrashIcon,
+  PencilSquareIcon,
+  CalendarDaysIcon
 } from "@heroicons/react/24/solid";
 
 const ReadersPage = () => {
@@ -14,6 +17,8 @@ const ReadersPage = () => {
   const [searchLimit, setSearchLimit] = useState("");
   const [cardStatus, setCardStatus] = useState("Tất cả");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCardOpen, setIsCardOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const readersPerPage = 6;
 
@@ -91,10 +96,8 @@ const ReadersPage = () => {
 
   const getFilteredReaders = () => {
     return readers.filter((r) => {
-      const matchLoaiThe =
-        selectedLoaiThe === "Tất cả" || r.cardType === selectedLoaiThe;
-      const matchLimit =
-        searchLimit === "" || parseCurrency(r.limit) >= parseInt(searchLimit);
+      const matchLoaiThe = selectedLoaiThe === "Tất cả" || r.cardType === selectedLoaiThe;
+      const matchLimit = searchLimit === "" || parseCurrency(r.limit) >= parseInt(searchLimit);
       const matchStatus = cardStatus === "Tất cả" || r.status === cardStatus;
       return matchLoaiThe && matchLimit && matchStatus;
     });
@@ -112,8 +115,22 @@ const ReadersPage = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
+  const handleCardClick = () => {
+    setIsDetailOpen(true);
+  }
+  const closeModal = () => setIsDetailOpen(false);
+
+  const handleCard = () => {
+    setIsCardOpen(true);
+    setIsDetailOpen(false);
+  }
+  const closeCard = () => setIsCardOpen(false);
+
+
+
   return (
     <div className="p-6">
+      {/* BỘ LỌC & MENU */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -208,33 +225,116 @@ const ReadersPage = () => {
         </div>
       )}
 
-      {/* Danh sách độc giả */}
+      {/* MODAL CHI TIẾT */}
+      {isDetailOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
+          <div className="flex max-h-[90vh] w-5/6 max-w-5xl flex-col overflow-y-auto rounded-lg bg-background p-8 lg:flex-row">
+            <div className="mb-4 w-full pr-4 lg:mb-0 lg:w-2/3">
+              <h2 className="text-3xl font-semibold text-primary">Nguyễn Văn A</h2>
+              <p className="mt-2 text-lg text-muted-foreground">ID: DG00123</p>
+              <div className="mt-6 space-y-3 text-muted-foreground">
+                <p><strong className="text-primary">Ngày sinh:</strong> 01/01/1990</p>
+                <p><strong className="text-primary">Giới tính:</strong> Nam</p>
+                <p><strong className="text-primary">Email:</strong> nguyenvana@example.com</p>
+                <p><strong className="text-primary">SĐT:</strong> 0123456789</p>
+                <p><strong className="text-primary">Địa chỉ:</strong> 123 Đường ABC, Quận 1, TP.HCM</p>
+              </div>
+              <div className="mt-6 flex space-x-3">
+                <button onClick={closeModal} className="rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]">Đóng</button>
+                <button onClick={handleCard} className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]">
+                  <CreditCardIcon className="h-4 w-4" />
+                  <span>Thẻ</span>
+                </button>
+                <button className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]">
+                  <PencilSquareIcon className="h-4 w-4" />
+                  <span>Sửa</span>
+                </button>
+                <button className="flex items-center space-x-2 rounded-md bg-destructive px-4 py-2 text-white hover:bg-red-700">
+                  <TrashIcon className="h-4 w-4" />
+                  <span>Xóa</span>
+                </button>
+              </div>
+            </div>
+            <div className="w-full lg:w-1/2">
+              <img src="images/logo/avatar.jpg" alt="Ảnh độc giả" className="h-full w-full rounded-lg object-cover shadow-lg" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isCardOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
+          <div className="flex max-h-[90vh] w-5/6 max-w-xl flex-col overflow-y-auto rounded-lg bg-background p-6">
+      
+            {/* Khung thẻ */}
+            <div className="relative w-full rounded-xl border bg-white p-5 shadow-lg">
+              <div className="flex items-start gap-6">
+          
+                {/* Ảnh chữ nhật đứng */}
+                <div className="flex-shrink-0">
+                  <img
+                    src="images/logo/avatar.jpg"
+                    alt="Ảnh thẻ"
+                    className="h-36 w-24 rounded-md border object-cover shadow"
+                  />
+                </div>
+
+                {/* Nội dung thẻ */}
+                <div className="flex flex-col justify-start text-sm text-muted-foreground space-y-1">
+                  <p className="text-base font-semibold text-primary mb-2">THẺ THƯ VIỆN</p>
+                  <p><strong className="text-gray-700">ID Thẻ:</strong> THE123456</p>
+                  <p><strong className="text-gray-700">Loại thẻ:</strong> Thẻ mượn</p>
+                  <p><strong className="text-gray-700">Hạn mức:</strong> 200.000 VND</p>
+                  <p><strong className="text-gray-700">Số thẻ:</strong> 9876 5432 1234 5678</p>
+                  <p><strong className="text-gray-700">Ngày tạo:</strong> 01/01/2023</p>
+                  <p><strong className="text-gray-700">Ngày hết hạn:</strong> 01/01/2025</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trạng thái + giao dịch */}
+            <div className="mt-4 w-full rounded-md border bg-gray-50 p-4 text-sm shadow-sm">
+              <p className="text-gray-700">
+                <strong className="text-primary">Trạng thái thẻ:</strong> Còn hạn
+              </p>
+              <p className="text-gray-700">
+                <strong className="text-primary">ID giao dịch:</strong> GD987654321
+              </p>
+            </div>
+
+            {/* Nút đóng - Gia hạn*/}
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={closeCard}
+                className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
+              >
+                Đóng
+              </button>
+              <button
+                className="min-h-[44px] flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
+              >
+                <CalendarDaysIcon className="h-5 w-5" />
+                <span>Gia hạn</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DANH SÁCH ĐỘC GIẢ */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {currentReaders.map((reader, index) => (
           <div
             key={index}
+            onClick={handleCardClick}
             className="rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md"
           >
-            <img
-              src={reader.image}
-              alt={reader.name}
-              className="h-32 w-32 rounded-full object-cover mx-auto"
-            />
-            <h3 className="mt-4 text-center text-lg font-semibold">
-              {reader.name}
-            </h3>
-            <p className="text-center text-sm text-gray-600">
-              {reader.cardType}
-            </p>
-            <p className="text-center text-sm text-gray-500 mt-1">
-              Hạn mức: {reader.limit} VND
-            </p>
-            <p className="text-center text-sm text-gray-500 mt-1">
-              Tình trạng: {reader.status}
-            </p>
-            <p className="mt-2 text-sm text-gray-700 text-center">
-              {reader.address}
-            </p>
+            <img src={reader.image} alt={reader.name} className="mx-auto h-32 w-32 rounded-full object-cover" />
+            <h3 className="mt-4 text-center text-lg font-semibold">{reader.name}</h3>
+            <p className="text-center text-sm text-gray-600">{reader.cardType}</p>
+            <p className="mt-1 text-center text-sm text-gray-500">Hạn mức: {reader.limit} VND</p>
+            <p className="mt-1 text-center text-sm text-gray-500">Tình trạng: {reader.status}</p>
+            <p className="mt-2 text-center text-sm text-gray-700">{reader.address}</p>
           </div>
         ))}
       </div>
@@ -254,9 +354,7 @@ const ReadersPage = () => {
               key={index}
               onClick={() => handlePageChange(index + 1)}
               className={`rounded border px-3 py-1 text-sm ${
-                currentPage === index + 1
-                  ? "bg-[#0071BC] text-white"
-                  : "hover:bg-gray-100"
+                currentPage === index + 1 ? "bg-[#0071BC] text-white" : "hover:bg-gray-100"
               }`}
             >
               {index + 1}
