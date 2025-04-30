@@ -120,7 +120,7 @@ const StaffPage = () => {
         </div>
       )}
 
-      {/* Popup thêm nhân viên */}
+      {/* Popup thêm/chỉnh sửa */}
       {(isAddOpen || isEditOpen) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
@@ -278,7 +278,6 @@ const StaffPage = () => {
               </div>
             </div>
 
-            {/* Thêm nút Chỉnh sửa và Xóa ở dưới modal */}
             <div className="mt-4 flex justify-end space-x-3">
               <button
                 onClick={handleEdit}
@@ -308,16 +307,9 @@ const StaffPage = () => {
         <table className="min-w-full border border-gray-300 divide-y divide-gray-200">
           <thead className="bg-gray-100">
             <tr>
-              {["ID", "Chức vụ", "Họ và Tên", "Ngày sinh", "Giới tính", "Email", "Xem chi tiết"].map(
-                (header, i) => (
-                  <th
-                    key={i}
-                    className="px-4 py-2 text-left text-sm font-medium text-gray-700"
-                  >
-                    {header}
-                  </th>
-                )
-              )}
+              {["ID", "Chức vụ", "Họ và Tên", "Ngày sinh", "Giới tính", "Email", "Xem chi tiết"].map((header, i) => (
+                <th key={i} className="px-4 py-2 text-left text-sm font-medium text-gray-700">{header}</th>
+              ))}
             </tr>
           </thead>
           <tbody className="bg-background divide-y divide-gray-200">
@@ -329,17 +321,23 @@ const StaffPage = () => {
                 <td className="px-4 py-2 text-sm">{staff.birthdate}</td>
                 <td className="px-4 py-2 text-sm">{staff.gender}</td>
                 <td className="px-4 py-2 text-sm">{staff.email}</td>
-                <td onClick={handleCardClick} className="px-4 py-2 text-sm text-[#0071BC] hover:underline cursor-pointer">
-                  Xem
-                </td>
+                <td onClick={handleCardClick} className="px-4 py-2 text-sm text-[#0071BC] hover:underline cursor-pointer">Xem</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Phân trang */}
+      {/* Phân trang với nút Trước / Tiếp */}
       <div className="mt-4 flex justify-center space-x-2">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Trước
+        </button>
+
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
@@ -353,6 +351,14 @@ const StaffPage = () => {
             {i + 1}
           </button>
         ))}
+
+        <button
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Tiếp
+        </button>
       </div>
     </div>
   );
@@ -375,6 +381,14 @@ const FilterButton = ({
     {icon}
     <span className="text-sm">{label}</span>
   </button>
+);
+
+// Dòng thông tin trong chi tiết
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-center space-x-2">
+    <span className="font-semibold">{label}:</span>
+    <span className="text-gray-700">{value}</span>
+  </div>
 );
 
 export default StaffPage;
