@@ -1,15 +1,16 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
   CreditCardIcon,
   QueueListIcon,
-  BellIcon,
   TrashIcon,
   PencilSquareIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
+  BookOpenIcon
 } from "@heroicons/react/24/solid";
 
 const ReadersPage = () => {
@@ -215,14 +216,18 @@ const ReadersPage = () => {
             label="Tạo thẻ"
             onClick={handleCreate}
           />
-          <FilterButton
-            icon={<QueueListIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Hàng đợi"
-          />
-          <FilterButton
-            icon={<BellIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Trả sách"
-          />
+          <Link href="/staff/queue">
+            <FilterButton
+              icon={<QueueListIcon className="h-4 w-4 text-[#0071BC]" />}
+              label="Hàng đợi"
+            />
+          </Link>
+          <Link href="/staff/borrows">
+            <FilterButton
+              icon={<BookOpenIcon className="h-4 w-4 text-[#0071BC]" />}
+              label="Sách mượn"
+            />
+          </Link>
         </div>
 
         <button
@@ -244,14 +249,18 @@ const ReadersPage = () => {
             label="Tạo thẻ"
             onClick={handleCreate}
           />
-          <FilterButton
-            icon={<QueueListIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Hàng đợi"
-          />
-          <FilterButton
-            icon={<BellIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Trả sách"
-          />
+          <Link href="/staff/queue">
+            <FilterButton
+              icon={<QueueListIcon className="h-4 w-4 text-[#0071BC]" />}
+              label="Hàng đợi"
+            />
+          </Link>
+          <Link href="/staff/borrows">
+            <FilterButton
+              icon={<BookOpenIcon className="h-4 w-4 text-[#0071BC]" />}
+              label="Sách mượn"
+            />
+          </Link>
         </div>
       )}
 
@@ -534,7 +543,7 @@ const FilterButton = ({
 }) => (
   <button
     onClick={onClick}
-    className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
+    className="w-full md:w-auto flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
   >
     {icon}
     <span className="text-sm">{label}</span>
