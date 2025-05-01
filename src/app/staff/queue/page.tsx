@@ -77,7 +77,7 @@ export default function QueuePage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* --- Filter Menu --- */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
