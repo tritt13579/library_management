@@ -4,20 +4,23 @@ import { Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { describe } from "node:test";
 import { useRouter } from "next/navigation";
 import { logOutAction } from "@/actions/users";
+import { usePermissions } from "@/providers/PermissionProvider";
 
 const LogoutButton = () => {
   const { toast } = useToast();
   const router = useRouter();
+  const { clearPermissions } = usePermissions();
 
   const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
     setLoading(true);
 
-    const { errorMessage } = await logOutAction();
+    clearPermissions();
+
+    const { errorMessage, role } = await logOutAction();
 
     if (!errorMessage) {
       toast({
@@ -25,7 +28,14 @@ const LogoutButton = () => {
         description: "You have been logged out successfully.",
         variant: "success",
       });
-      router.push("/");
+
+      if (role === "reader") {
+        router.replace("/reader");
+      } else if (role === "staff") {
+        router.replace("/staff");
+      } else {
+        router.replace("/");
+      }
     } else {
       toast({
         title: "Error",
@@ -35,7 +45,6 @@ const LogoutButton = () => {
     }
 
     setLoading(false);
-    console.log("Logging out...");
   };
 
   return (

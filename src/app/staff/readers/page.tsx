@@ -10,8 +10,9 @@ import {
   TrashIcon,
   PencilSquareIcon,
   CalendarDaysIcon,
-  BookOpenIcon
+  BookOpenIcon,
 } from "@heroicons/react/24/solid";
+import ReaderFormModal from "@/components/ReaderFormModal";
 
 const ReadersPage = () => {
   const [selectedLoaiThe, setSelectedLoaiThe] = useState("Tất cả");
@@ -101,8 +102,10 @@ const ReadersPage = () => {
 
   const getFilteredReaders = () => {
     return readers.filter((r) => {
-      const matchLoaiThe = selectedLoaiThe === "Tất cả" || r.cardType === selectedLoaiThe;
-      const matchLimit = searchLimit === "" || parseCurrency(r.limit) >= parseInt(searchLimit);
+      const matchLoaiThe =
+        selectedLoaiThe === "Tất cả" || r.cardType === selectedLoaiThe;
+      const matchLimit =
+        searchLimit === "" || parseCurrency(r.limit) >= parseInt(searchLimit);
       const matchStatus = cardStatus === "Tất cả" || r.status === cardStatus;
       return matchLoaiThe && matchLimit && matchStatus;
     });
@@ -113,7 +116,7 @@ const ReadersPage = () => {
 
   const currentReaders = filteredReaders.slice(
     (currentPage - 1) * readersPerPage,
-    currentPage * readersPerPage
+    currentPage * readersPerPage,
   );
 
   const handlePageChange = (page: number) => {
@@ -122,40 +125,40 @@ const ReadersPage = () => {
 
   const handleCardClick = () => {
     setIsDetailOpen(true);
-  }
+  };
   const closeModal = () => setIsDetailOpen(false);
 
   const handleCard = () => {
     setIsCardOpen(true);
     setIsDetailOpen(false);
-  }
+  };
   const closeCard = () => setIsCardOpen(false);
 
   const handleExtend = () => {
     setIsExtendOpen(true);
     setIsCardOpen(false);
     setIsDetailOpen(false);
-  }
-  const closeExtend = () => setIsExtendOpen(false)
+  };
+  const closeExtend = () => setIsExtendOpen(false);
 
   const handleCreate = () => {
     setIsCreateOpen(true);
     setIsExtendOpen(false);
     setIsCardOpen(false);
     setIsDetailOpen(false);
-  }
+  };
   const closeCreate = () => {
-    setIsCreateOpen(false)
-    setIsEditOpen(false)
-  } 
+    setIsCreateOpen(false);
+    setIsEditOpen(false);
+  };
 
   const handleEdit = () => {
-    setIsEditOpen(true)
+    setIsEditOpen(true);
     setIsCreateOpen(false);
     setIsExtendOpen(false);
     setIsCardOpen(false);
     setIsDetailOpen(false);
-  }
+  };
 
   return (
     <div className="p-6">
@@ -269,22 +272,48 @@ const ReadersPage = () => {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="flex max-h-[90vh] w-5/6 max-w-5xl flex-col overflow-y-auto rounded-lg bg-background p-8 lg:flex-row">
             <div className="mb-4 w-full pr-4 lg:mb-0 lg:w-2/3">
-              <h2 className="text-3xl font-semibold text-primary">Nguyễn Văn A</h2>
+              <h2 className="text-3xl font-semibold text-primary">
+                Nguyễn Văn A
+              </h2>
               <p className="mt-2 text-lg text-muted-foreground">ID: DG00123</p>
               <div className="mt-6 space-y-3 text-muted-foreground">
-                <p><strong className="text-primary">Ngày sinh:</strong> 01/01/1990</p>
-                <p><strong className="text-primary">Giới tính:</strong> Nam</p>
-                <p><strong className="text-primary">Email:</strong> nguyenvana@example.com</p>
-                <p><strong className="text-primary">SĐT:</strong> 0123456789</p>
-                <p><strong className="text-primary">Địa chỉ:</strong> 123 Đường ABC, Quận 1, TP.HCM</p>
+                <p>
+                  <strong className="text-primary">Ngày sinh:</strong>{" "}
+                  01/01/1990
+                </p>
+                <p>
+                  <strong className="text-primary">Giới tính:</strong> Nam
+                </p>
+                <p>
+                  <strong className="text-primary">Email:</strong>{" "}
+                  nguyenvana@example.com
+                </p>
+                <p>
+                  <strong className="text-primary">SĐT:</strong> 0123456789
+                </p>
+                <p>
+                  <strong className="text-primary">Địa chỉ:</strong> 123 Đường
+                  ABC, Quận 1, TP.HCM
+                </p>
               </div>
               <div className="mt-6 flex space-x-3">
-                <button onClick={closeModal} className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">Đóng</button>
-                <button onClick={handleCard} className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
+                <button
+                  onClick={closeModal}
+                  className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={handleCard}
+                  className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
+                >
                   <CreditCardIcon className="h-4 w-4" />
                   <span>Thẻ</span>
                 </button>
-                <button onClick={handleEdit} className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
+                >
                   <PencilSquareIcon className="h-4 w-4" />
                   <span>Sửa</span>
                 </button>
@@ -295,112 +324,30 @@ const ReadersPage = () => {
               </div>
             </div>
             <div className="w-full lg:w-1/2">
-              <img src="images/logo/avatar.jpg" alt="Ảnh độc giả" className="h-full w-full rounded-lg object-cover shadow-lg" />
+              <img
+                src="images/logo/avatar.jpg"
+                alt="Ảnh độc giả"
+                className="h-full w-full rounded-lg object-cover shadow-lg"
+              />
             </div>
           </div>
         </div>
       )}
 
       {/* TẠO THẺ - CHỈNH SỬA */}
-      {(isCreateOpen || isEditOpen) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
-            <h2 className="mb-4 text-2xl font-semibold text-primary">
-            {isCreateOpen ? "Thêm độc giả" : "Chỉnh sửa"}
-            </h2>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Họ độc giả"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-                <input
-                  type="text"
-                  placeholder="Tên độc giả"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col">
-                  <label className="mb-1 text-sm font-medium text-gray-700">Ngày sinh</label>
-                  <input
-                    type="date"
-                    className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                  />
-                </div>
-                <select
-                  defaultValue=""
-                  className="self-end rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                >
-                  <option value="" disabled>
-                    Chọn giới tính
-                  </option>
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                </select>
-              </div>
-              <input
-                type="email"
-                placeholder="Email"
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <input
-                type="text"
-                placeholder="Số điện thoại"
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <input
-                type="text"
-                placeholder="Địa chỉ"
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <select className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]">
-                  <option value="">Chọn loại thẻ</option>
-                  <option value="Mượn">Thẻ mượn</option>
-                  <option value="Đọc">Thẻ đọc</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Hạn mức (VD: 200000)"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-sm font-medium text-gray-700">Ảnh thẻ</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-[#0071BC] file:px-4 file:py-2 file:text-white hover:file:bg-[#005f9e]"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end space-x-3">
-              <button
-                onClick={closeCreate}
-                className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-              >
-                Hủy
-              </button>
-              <button className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-[#005f9e]">
-                Lưu độc giả
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReaderFormModal
+        isCreateOpen={isCreateOpen}
+        isEditOpen={isEditOpen}
+        closeCreate={closeCreate}
+      />
 
       {/* THẺ */}
       {isCardOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="flex max-h-[90vh] w-5/6 max-w-xl flex-col overflow-y-auto rounded-lg bg-background p-6">
-      
             {/* Khung thẻ */}
             <div className="relative w-full rounded-xl border bg-background p-5 shadow-lg">
               <div className="flex items-start gap-6">
-          
                 {/* Ảnh */}
                 <div className="flex-shrink-0">
                   <img
@@ -411,14 +358,33 @@ const ReadersPage = () => {
                 </div>
 
                 {/* Nội dung thẻ */}
-                <div className="flex flex-col justify-start text-sm text-muted-foreground space-y-1">
-                  <p className="text-base font-semibold text-primary mb-2">THẺ THƯ VIỆN</p>
-                  <p><strong className="text-gray-700">ID Thẻ:</strong> THE123456</p>
-                  <p><strong className="text-gray-700">Loại thẻ:</strong> Thẻ mượn</p>
-                  <p><strong className="text-gray-700">Hạn mức:</strong> 200.000 VND</p>
-                  <p><strong className="text-gray-700">Số thẻ:</strong> 9876 5432 1234 5678</p>
-                  <p><strong className="text-gray-700">Ngày tạo:</strong> 01/01/2023</p>
-                  <p><strong className="text-gray-700">Ngày hết hạn:</strong> 01/01/2025</p>
+                <div className="flex flex-col justify-start space-y-1 text-sm text-muted-foreground">
+                  <p className="mb-2 text-base font-semibold text-primary">
+                    THẺ THƯ VIỆN
+                  </p>
+                  <p>
+                    <strong className="text-gray-700">ID Thẻ:</strong> THE123456
+                  </p>
+                  <p>
+                    <strong className="text-gray-700">Loại thẻ:</strong> Thẻ
+                    mượn
+                  </p>
+                  <p>
+                    <strong className="text-gray-700">Hạn mức:</strong> 200.000
+                    VND
+                  </p>
+                  <p>
+                    <strong className="text-gray-700">Số thẻ:</strong> 9876 5432
+                    1234 5678
+                  </p>
+                  <p>
+                    <strong className="text-gray-700">Ngày tạo:</strong>{" "}
+                    01/01/2023
+                  </p>
+                  <p>
+                    <strong className="text-gray-700">Ngày hết hạn:</strong>{" "}
+                    01/01/2025
+                  </p>
                 </div>
               </div>
             </div>
@@ -426,10 +392,12 @@ const ReadersPage = () => {
             {/* Trạng thái + giao dịch */}
             <div className="mt-4 w-full rounded-md border bg-background p-4 text-sm shadow-sm">
               <p className="text-gray-700">
-                <strong className="text-primary">Trạng thái thẻ:</strong> Còn hạn
+                <strong className="text-primary">Trạng thái thẻ:</strong> Còn
+                hạn
               </p>
               <p className="text-gray-700">
-                <strong className="text-primary">ID giao dịch:</strong> GD987654321
+                <strong className="text-primary">ID giao dịch:</strong>{" "}
+                GD987654321
               </p>
             </div>
 
@@ -442,7 +410,7 @@ const ReadersPage = () => {
                 Đóng
               </button>
               <button
-                className="min-h-[44px] flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
+                className="flex min-h-[44px] items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
                 onClick={handleExtend}
               >
                 <CalendarDaysIcon className="h-5 w-5" />
@@ -457,11 +425,15 @@ const ReadersPage = () => {
       {isExtendOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-primary">Gia hạn thẻ</h3>
-            <label className="mb-2 block text-sm font-medium text-gray-700">Chọn ngày hết hạn mới</label>
+            <h3 className="mb-4 text-lg font-semibold text-primary">
+              Gia hạn thẻ
+            </h3>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Chọn ngày hết hạn mới
+            </label>
             <input
               type="date"
-              className="mb-4 w-full bg-background rounded border px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none"
+              className="mb-4 w-full rounded border bg-background px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none"
             />
             <div className="mt-4 flex justify-end space-x-3">
               <button
@@ -470,9 +442,7 @@ const ReadersPage = () => {
               >
                 Hủy
               </button>
-              <button
-                className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-[#005f9e]"
-              >
+              <button className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-[#005f9e]">
                 Xác nhận
               </button>
             </div>
@@ -488,12 +458,26 @@ const ReadersPage = () => {
             onClick={handleCardClick}
             className="rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md"
           >
-            <img src={reader.image} alt={reader.name} className="mx-auto h-32 w-32 rounded-full object-cover" />
-            <h3 className="mt-4 text-center text-lg font-semibold">{reader.name}</h3>
-            <p className="text-center text-sm text-gray-600">{reader.cardType}</p>
-            <p className="mt-1 text-center text-sm text-gray-500">Hạn mức: {reader.limit} VND</p>
-            <p className="mt-1 text-center text-sm text-gray-500">Tình trạng: {reader.status}</p>
-            <p className="mt-2 text-center text-sm text-gray-700">{reader.address}</p>
+            <img
+              src={reader.image}
+              alt={reader.name}
+              className="mx-auto h-32 w-32 rounded-full object-cover"
+            />
+            <h3 className="mt-4 text-center text-lg font-semibold">
+              {reader.name}
+            </h3>
+            <p className="text-center text-sm text-gray-600">
+              {reader.cardType}
+            </p>
+            <p className="mt-1 text-center text-sm text-gray-500">
+              Hạn mức: {reader.limit} VND
+            </p>
+            <p className="mt-1 text-center text-sm text-gray-500">
+              Tình trạng: {reader.status}
+            </p>
+            <p className="mt-2 text-center text-sm text-gray-700">
+              {reader.address}
+            </p>
           </div>
         ))}
       </div>
@@ -513,7 +497,9 @@ const ReadersPage = () => {
               key={index}
               onClick={() => handlePageChange(index + 1)}
               className={`rounded border px-3 py-1 text-sm ${
-                currentPage === index + 1 ? "bg-[#0071BC] text-white" : "hover:bg-gray-100"
+                currentPage === index + 1
+                  ? "bg-[#0071BC] text-white"
+                  : "hover:bg-gray-100"
               }`}
             >
               {index + 1}
@@ -543,7 +529,7 @@ const FilterButton = ({
 }) => (
   <button
     onClick={onClick}
-    className="w-full md:w-auto flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
+    className="flex w-full items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md md:w-auto"
   >
     {icon}
     <span className="text-sm">{label}</span>

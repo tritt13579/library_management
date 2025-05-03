@@ -25,11 +25,6 @@ async function StaffHeader() {
           <LogoutButton />
         ) : (
           <>
-            <Button asChild>
-              <Link href="/sign-up" className="hidden sm:block">
-                Sign Up
-              </Link>
-            </Button>
             <Button asChild variant="outline">
               <Link href="/login">Login</Link>
             </Button>
