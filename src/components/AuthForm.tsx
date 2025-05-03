@@ -8,19 +8,13 @@ import { Input } from "./ui/input";
 import { useTransition } from "react";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
-import Link from "next/link";
-import { loginAction, signUpAction } from "@/actions/users";
+import { loginAction } from "@/actions/users";
+import { usePermissions } from "@/providers/PermissionProvider";
 
-type Props = {
-  type: "login" | "signUp";
-};
-
-const AuthForm = ({ type }: Props) => {
-  const isLoginForm = type === "login";
-
+const AuthForm = () => {
   const router = useRouter();
   const { toast } = useToast();
-
+  const { fetchPermissions } = usePermissions();
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (formData: FormData) => {
@@ -28,26 +22,26 @@ const AuthForm = ({ type }: Props) => {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
 
-      let errorMessage;
-      let title;
-      let description;
-      if (isLoginForm) {
-        errorMessage = (await loginAction(email, password)).errorMessage;
-        title = "Logged in";
-        description = "You have successfully logged in.";
-      } else {
-        errorMessage = (await signUpAction(email, password)).errorMessage;
-        title = "Signed up";
-        description = "Check your email to verify your account.";
-      }
+      const { errorMessage, role } = await loginAction(email, password);
 
       if (!errorMessage) {
+        if (role === "staff") {
+          await fetchPermissions();
+        }
+
         toast({
-          title,
-          description,
+          title: "Logged in",
+          description: "You have successfully logged in.",
           variant: "success",
         });
-        router.replace("/");
+
+        if (role === "reader") {
+          router.replace("/reader");
+        } else if (role === "staff") {
+          router.replace("/staff");
+        } else {
+          router.replace("/");
+        }
       } else {
         toast({
           title: "Error",
@@ -57,6 +51,7 @@ const AuthForm = ({ type }: Props) => {
       }
     });
   };
+
   return (
     <form action={handleSubmit}>
       <CardContent className="grid w-full items-center gap-4">
@@ -84,26 +79,9 @@ const AuthForm = ({ type }: Props) => {
         </div>
       </CardContent>
       <CardFooter className="mt-4 flex flex-col gap-6">
-        <Button className="w-full">
-          {isPending ? (
-            <Loader2 className="animate-spin" />
-          ) : isLoginForm ? (
-            "Login"
-          ) : (
-            "Sign Up"
-          )}
+        <Button className="w-full" disabled={isPending}>
+          {isPending ? <Loader2 className="animate-spin" /> : "Login"}
         </Button>
-        <p className="text-xs">
-          {isLoginForm
-            ? "Don't have an account yet?"
-            : "Already have an account?"}{" "}
-          <Link
-            href={isLoginForm ? "/sign-up" : "/login"}
-            className={`text-sm text-blue-500 underline ${isPending ? "pointer-events-none opacity-50" : ""}`}
-          >
-            {isLoginForm ? "Sign Up" : "Login"}
-          </Link>
-        </p>
       </CardFooter>
     </form>
   );

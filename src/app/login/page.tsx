@@ -10,7 +10,7 @@ const LoginPage = () => {
           <CardTitle className="text-center text-3xl">Login</CardTitle>
         </CardHeader>
 
-        <AuthForm type="login" />
+        <AuthForm />
       </Card>
     </div>
   );
