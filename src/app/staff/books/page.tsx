@@ -1,15 +1,18 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import BookDetailModal from "@/components/BookDetailModel";
+import BookFormModal from "@/components/BookFormModel";
+import FileUploadModal from "@/components/FileUploadModel";
+import CategoryModal from "@/components/CategoryModel";
 import BookCard from "./bookCard";
+import { supabaseClient } from "@/lib/client";
+
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
   FolderPlusIcon,
   ArrowUpOnSquareIcon,
-  ArrowDownOnSquareIcon,
-  PencilSquareIcon,
-  TrashIcon,
   CubeIcon,
 } from "@heroicons/react/24/solid";
 
@@ -24,77 +27,74 @@ const BooksPage = () => {
   const [isFileOpend, setIsFileOpend] = useState(false);
   const [isCategory, setIsCategory] = useState(false);
 
-  const categories = ["Tất cả", "Văn học", "Lịch sử", "Khoa học", "Thiếu nhi"];
-  const books = [
-    {
-      title: "Dế Mèn Phiêu Lưu Ký",
-      author: "Tô Hoài",
-      image: "/images/books/vidubook.jpg",
-      category: "Thiếu nhi",
-      description: "Một cuốn sách nổi tiếng trong văn học thiếu nhi Việt Nam.",
-    },
-    {
-      title: "Sapiens: Lược sử loài người",
-      author: "Yuval Noah Harari",
-      image: "/images/books/vidubook.jpg",
-      category: "Khoa học",
-      description:
-        "Cuốn sách này kể về lịch sử loài người từ thời kỳ nguyên thủy đến nay.",
-    },
-    {
-      title: "Sapiens: Lược sử loài người",
-      author: "Yuval Noah Harari",
-      image: "/images/books/vidubook.jpg",
-      category: "Khoa học",
-      description:
-        "Cuốn sách này kể về lịch sử loài người từ thời kỳ nguyên thủy đến nay.",
-    },
-    {
-      title: "Sapiens: Lược sử loài người",
-      author: "Yuval Noah Harari",
-      image: "/images/books/vidubook.jpg",
-      category: "Khoa học",
-      description:
-        "Cuốn sách này kể về lịch sử loài người từ thời kỳ nguyên thủy đến nay.",
-    },
-    {
-      title: "Sapiens: Lược sử loài người",
-      author: "Yuval Noah Harari",
-      image: "/images/books/vidubook.jpg",
-      category: "Khoa học",
-      description:
-        "Cuốn sách này kể về lịch sử loài người từ thời kỳ nguyên thủy đến nay.",
-    },
-    {
-      title: "Sapiens: Lược sử loài người",
-      author: "Yuval Noah Harari",
-      image: "/images/books/vidubook.jpg",
-      category: "Khoa học",
-      description:
-        "Cuốn sách này kể về lịch sử loài người từ thời kỳ nguyên thủy đến nay.",
-    },
-  ];
+  const [books, setBooks] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase
+        .from("booktitle")
+        .select(`
+          *,
+          category:category_id(category_name),
+          iswrittenby!inner (
+            author:author_id ( author_name )
+          ),
+          bookcopy(*),
+          shelf:shelf__id(location),
+          publisher:publisher_id(publisher_name)
+        `);
+
+      if (error) {
+        console.error("Error fetching books:", error);
+      } else {
+        setBooks(data || []);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase.from("category").select("*");
+
+      if (error) {
+        console.error("Error fetching categories:", error);
+      } else {
+        const categoryNames = data.map((cat: any) => cat.category_name);
+        setCategories(["Tất cả", ...categoryNames]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const getBooksByCategory = (category: string) =>
-    books.filter((book) => book.category === category);
+    books.filter((book) => book.category?.category_name === category);
 
   const toggleExpand = (category: string) => {
     setExpandedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
-        : [...prev, category],
+        : [...prev, category]
     );
   };
 
-  const opendModel = (model: "detail" | "add" | "edit" | "file" | "category", book: any = null) => {
+  const opendModel = (
+    model: "detail" | "add" | "edit" | "file" | "category",
+    book: any = null
+  ) => {
     setIsDetailOpen(model === "detail");
     setIsAddOpen(model === "add");
     setIsEditOpen(model === "edit");
     setIsFileOpend(model === "file");
     setIsCategory(model === "category");
-    
+
     setSelectedBook(model === "detail" ? book : null);
-  };  
+  };
 
   const closeModal = () => {
     setIsDetailOpen(false);
@@ -160,10 +160,8 @@ const BooksPage = () => {
         </button>
       </div>
 
-      {/* Khi mở menu mobile */}
       {isMobileMenuOpen && (
         <div className="mt-4 flex flex-col space-y-4 md:hidden">
-          {/* Danh mục mobile */}
           <div className="flex flex-col space-y-2">
             <FilterButton
               icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
@@ -184,257 +182,42 @@ const BooksPage = () => {
         </div>
       )}
 
-      {isCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="w-full max-w-md space-y-6 rounded-lg bg-background p-8">
-            <h2 className="text-2xl font-semibold text-primary">
-              Quản lý thể loại
-            </h2>
+      <CategoryModal
+        isOpen={isCategory}
+        categories={categories.filter((cat) => cat !== "Tất cả")}
+        onClose={closeModal}
+        onAdd={(newCat) => {
+          setCategories((prev) => [...prev, newCat]);
+          // Xử lý
+        }}
+        onDelete={(catToDelete) => {
+          setCategories((prev) => prev.filter((c) => c !== catToDelete));
+          // xử lý
+        }}
+      />
 
-            {/* Thêm thể loại mới */}
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                placeholder="Tên thể loại mới"
-                className="flex-1 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
-                Thêm
-              </button>
-            </div>
-
-            {/* Danh sách thể loại */}
-            <ul className="max-h-60 space-y-2 overflow-y-auto">
-              {categories.map((category, index) => (
-                <li
-                  key={index}
-                  className="flex items-center justify-between border-b border-gray-200 pb-1"
-                >
-                  <span className="text-foreground">{category}</span>
-                  <button className="text-sm text-red-500 hover:text-red-700">
-                    Xóa
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex justify-end pt-4">
-              <button
-                onClick={closeModal}
-                className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isFileOpend && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="w-full max-w-md space-y-6 rounded-lg bg-background p-8">
-            <h2 className="text-2xl font-semibold text-primary">
-              Tải lên tài liệu
-            </h2>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-foreground">
-                Chọn file (.xlsx, .xls, .docx, .doc)
-              </label>
-              <input
-                type="file"
-                accept=".xlsx,.xls,.docx,.doc"
-                className="block w-full rounded-md border border-gray-300 bg-input px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  // xử lý file ở đây
-                  console.log(file);
-                }}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                onClick={closeModal}
-                className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => console.log("Tải lên")}
-                className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
-              >
-                Tải lên
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {(isAddOpen || isEditOpen) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
-            <h2 className="mb-4 text-2xl font-semibold text-primary">
-              {isAddOpen ? "Thêm sách mới" : "Chỉnh sửa sách"}
-            </h2>
-            <div className="grid grid-cols-1 gap-4">
-              <input
-                type="text"
-                placeholder="Tên sách"
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <input
-                type="text"
-                placeholder="Tác giả"
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <input
-                type="text"
-                placeholder="Năm xuất bản"
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-
-              {/* ISBN + Kệ sách cùng hàng */}
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="ISBN"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-                <input
-                  type="text"
-                  placeholder="Kệ sách"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-              </div>
-
-              {/* Ngôn ngữ + Lần sửa đổi cùng hàng */}
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Ngôn ngữ"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-                <input
-                  type="text"
-                  placeholder="Lần sửa đổi"
-                  className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-                />
-              </div>
-
-              <select className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]">
-                <option value="">Chọn thể loại</option>
-                {categories
-                  .filter((c) => c !== "Tất cả")
-                  .map((cat, index) => (
-                    <option key={index} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-              </select>
-
-              <textarea
-                placeholder="Mô tả sách"
-                rows={4}
-                className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-            </div>
-
-            <div className="mt-4 flex justify-end space-x-3">
-              <button
-                onClick={closeModal}
-                className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-              >
-                Hủy
-              </button>
-              <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
-                Lưu sách
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <FileUploadModal
+        isOpen={isFileOpend}
+        onClose={closeModal}
+        onUpload={(file) => {
+        console.log("Đã chọn file:", file);
+        // xử lý upload
+        }}
+      />
+       
+      <BookFormModal
+        isOpen={isAddOpen || isEditOpen}
+        isEdit={isEditOpen}
+        categories={categories}
+        onClose={closeModal}
+      />
 
       {isDetailOpen && selectedBook && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="flex max-h-[90vh] w-5/6 max-w-5xl flex-col overflow-y-auto rounded-lg bg-background p-8 lg:flex-row">
-            <div className="mb-2 w-full pr-2 lg:mb-0 lg:w-2/3">
-              <h2 className="text-3xl font-semibold text-primary">
-                {selectedBook.title}
-              </h2>
-              <p className="mt-2 text-lg text-muted-foreground">
-                Tác giả: {selectedBook.author}
-              </p>
-
-              <div className="mt-6 space-y-3 text-muted-foreground">
-                <p>
-                  <strong className="text-primary">Thể loại:</strong>{" "}
-                  {selectedBook.category}
-                </p>
-                <p>
-                  <strong className="text-primary">Năm xuất bản:</strong> 1941
-                </p>
-                <p>
-                  <strong className="text-primary">ISBN:</strong>{" "}
-                  978-3-16-148410-0
-                </p>
-                <p>
-                  <strong className="text-primary">Kệ sách:</strong> Kệ A3
-                </p>
-                <p>
-                  <strong className="text-primary">Ngôn ngữ:</strong> Tiếng Việt
-                </p>
-                <p>
-                  <strong className="text-primary">Người đăng:</strong> Phạm Hồ
-                  Như Thủy
-                </p>
-                <p>
-                  <strong className="text-primary">Ngày đăng:</strong>{" "}
-                  01/01/2023
-                </p>
-                <p>
-                  <strong className="text-primary">Lần sửa đổi:</strong> lần thứ
-                  nhất
-                </p>
-              </div>
-
-              <div className="mt-6">
-                <strong className="text-primary">Mô tả:</strong>
-                <p className="mt-2 text-muted-foreground">
-                  {selectedBook.description}
-                </p>
-              </div>
-
-              <div className="mt-6 flex space-x-3">
-                <button
-                  onClick={closeModal}
-                  className="rounded-md bg-primary px-4 py-2 text-primary-foreground transition hover:bg-[#005f9e]"
-                >
-                  Đóng
-                </button>
-                <button
-                  onClick={() => opendModel("edit")}
-                  className="flex space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground transition hover:bg-[#005f9e]"
-                >
-                  <PencilSquareIcon className="h-5 w-5" />
-                  Sửa
-                </button>
-                <button className="flex space-x-2 rounded-md bg-destructive px-4 py-2 text-primary-foreground transition hover:bg-red-700">
-                  <TrashIcon className="h-5 w-5" />
-                  Xóa
-                </button>
-              </div>
-            </div>
-
-            <div className="w-full lg:w-1/2">
-              <img
-                src={selectedBook.image}
-                alt={`Ảnh bìa ${selectedBook.title}`}
-                className="h-full w-full rounded-lg object-cover shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
+        <BookDetailModal
+          book={selectedBook}
+          onClose={closeModal}
+          onEdit={() => opendModel("edit")}
+        />
       )}
 
       {(selectedCategory === "Tất cả"
@@ -468,9 +251,9 @@ const BooksPage = () => {
                 <div key={index} onClick={() => opendModel("detail", book)}>
                   <BookCard
                     title={book.title}
-                    author={book.author}
-                    image={book.image}
-                    category={book.category}
+                    author={book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
+                    image={book.cover_image}
+                    category={book.category?.category_name}
                   />
                 </div>
               ))}
