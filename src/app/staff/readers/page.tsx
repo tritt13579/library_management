@@ -123,42 +123,21 @@ const ReadersPage = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  const handleCardClick = () => {
-    setIsDetailOpen(true);
-  };
-  const closeModal = () => setIsDetailOpen(false);
+  const opendModel = (model: "detail" | "card" | "extend" | "create" | "edit") => {
+    setIsDetailOpen(model === "detail");
+    setIsCardOpen(model === "card");
+    setIsExtendOpen(model === "extend");
+    setIsCreateOpen(model === "create");
+    setIsEditOpen(model === "edit");
+  }
 
-  const handleCard = () => {
-    setIsCardOpen(true);
+  const closeModal = () => {
     setIsDetailOpen(false);
-  };
-  const closeCard = () => setIsCardOpen(false);
-
-  const handleExtend = () => {
-    setIsExtendOpen(true);
     setIsCardOpen(false);
-    setIsDetailOpen(false);
-  };
-  const closeExtend = () => setIsExtendOpen(false);
-
-  const handleCreate = () => {
-    setIsCreateOpen(true);
     setIsExtendOpen(false);
-    setIsCardOpen(false);
-    setIsDetailOpen(false);
-  };
-  const closeCreate = () => {
     setIsCreateOpen(false);
     setIsEditOpen(false);
-  };
-
-  const handleEdit = () => {
-    setIsEditOpen(true);
-    setIsCreateOpen(false);
-    setIsExtendOpen(false);
-    setIsCardOpen(false);
-    setIsDetailOpen(false);
-  };
+  }
 
   return (
     <div className="p-6">
@@ -217,7 +196,7 @@ const ReadersPage = () => {
           <FilterButton
             icon={<CreditCardIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Tạo thẻ"
-            onClick={handleCreate}
+            onClick={() => opendModel("create")}
           />
           <Link href="/staff/queue">
             <FilterButton
@@ -250,7 +229,7 @@ const ReadersPage = () => {
           <FilterButton
             icon={<CreditCardIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Tạo thẻ"
-            onClick={handleCreate}
+            onClick={() => opendModel("create")}
           />
           <Link href="/staff/queue">
             <FilterButton
@@ -304,14 +283,14 @@ const ReadersPage = () => {
                   Đóng
                 </button>
                 <button
-                  onClick={handleCard}
+                  onClick={() => opendModel("card")}
                   className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
                 >
                   <CreditCardIcon className="h-4 w-4" />
                   <span>Thẻ</span>
                 </button>
                 <button
-                  onClick={handleEdit}
+                  onClick={() => opendModel("edit")}
                   className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
                 >
                   <PencilSquareIcon className="h-4 w-4" />
@@ -338,7 +317,7 @@ const ReadersPage = () => {
       <ReaderFormModal
         isCreateOpen={isCreateOpen}
         isEditOpen={isEditOpen}
-        closeCreate={closeCreate}
+        closeCreate={closeModal}
       />
 
       {/* THẺ */}
@@ -404,14 +383,14 @@ const ReadersPage = () => {
             {/* Nút đóng - Gia hạn*/}
             <div className="mt-6 flex justify-end space-x-3">
               <button
-                onClick={closeCard}
+                onClick={closeModal}
                 className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
               >
                 Đóng
               </button>
               <button
                 className="flex min-h-[44px] items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
-                onClick={handleExtend}
+                onClick={() => opendModel("extend")}
               >
                 <CalendarDaysIcon className="h-5 w-5" />
                 <span>Gia hạn</span>
@@ -437,7 +416,7 @@ const ReadersPage = () => {
             />
             <div className="mt-4 flex justify-end space-x-3">
               <button
-                onClick={closeExtend}
+                onClick={closeModal}
                 className="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Hủy
@@ -455,7 +434,7 @@ const ReadersPage = () => {
         {currentReaders.map((reader, index) => (
           <div
             key={index}
-            onClick={handleCardClick}
+            onClick={() => opendModel("detail")}
             className="rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md"
           >
             <img

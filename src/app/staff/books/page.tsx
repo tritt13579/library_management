@@ -86,67 +86,22 @@ const BooksPage = () => {
     );
   };
 
-  const handleCardClick = (book: any) => {
-    setSelectedBook(book);
-    setIsDetailOpen(true);
-    setIsAddOpen(false);
-    setIsEditOpen(false);
-    setIsFileOpend(false);
-    setIsCategory(false);
-  };
+  const opendModel = (model: "detail" | "add" | "edit" | "file" | "category", book: any = null) => {
+    setIsDetailOpen(model === "detail");
+    setIsAddOpen(model === "add");
+    setIsEditOpen(model === "edit");
+    setIsFileOpend(model === "file");
+    setIsCategory(model === "category");
+    
+    setSelectedBook(model === "detail" ? book : null);
+  };  
 
   const closeModal = () => {
     setIsDetailOpen(false);
     setSelectedBook(null);
-  };
-
-  const handleAdd = () => {
-    setIsAddOpen(true);
-    setIsDetailOpen(false);
-    setSelectedBook(null);
-    setIsEditOpen(false);
-    setIsFileOpend(false);
-    setIsCategory(false);
-  };
-
-  const closeAdd = () => {
     setIsAddOpen(false);
     setIsEditOpen(false);
-  };
-
-  const handleEdit = () => {
-    setIsEditOpen(true);
-    setIsAddOpen(false);
-    setIsDetailOpen(false);
-    setSelectedBook(null);
     setIsFileOpend(false);
-    setIsCategory(false);
-  };
-
-  const handleFile = () => {
-    setIsFileOpend(true);
-    setIsAddOpen(false);
-    setIsDetailOpen(false);
-    setSelectedBook(null);
-    setIsEditOpen(false);
-    setIsCategory(false);
-  };
-
-  const closeFile = () => {
-    setIsFileOpend(false);
-  };
-
-  const handleCat = () => {
-    setIsCategory(true);
-    setIsFileOpend(false);
-    setIsAddOpen(false);
-    setIsDetailOpen(false);
-    setSelectedBook(null);
-    setIsEditOpen(false);
-    setIsFileOpend(false);
-  };
-
-  const closeCat = () => {
     setIsCategory(false);
   };
 
@@ -179,17 +134,17 @@ const BooksPage = () => {
           <FilterButton
             icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thêm sách"
-            onClick={handleAdd}
+            onClick={() => opendModel("add")}
           />
           <FilterButton
             icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Tải lên sách"
-            onClick={handleFile}
+            onClick={() => opendModel("file")}
           />
           <FilterButton
             icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thể loại"
-            onClick={handleCat}
+            onClick={() => opendModel("category")}
           />
         </div>
 
@@ -213,17 +168,17 @@ const BooksPage = () => {
             <FilterButton
               icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
               label="Thêm sách"
-              onClick={handleAdd}
+              onClick={() => opendModel("add")}
             />
             <FilterButton
               icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
               label="Tải lên sách"
-              onClick={handleFile}
+              onClick={() => opendModel("file")}
             />
             <FilterButton
               icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
               label="Thể loại"
-              onClick={handleCat}
+              onClick={() => opendModel("category")}
             />
           </div>
         </div>
@@ -265,7 +220,7 @@ const BooksPage = () => {
 
             <div className="flex justify-end pt-4">
               <button
-                onClick={closeCat}
+                onClick={closeModal}
                 className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
               >
                 Đóng
@@ -300,7 +255,7 @@ const BooksPage = () => {
 
             <div className="flex justify-end space-x-3 pt-4">
               <button
-                onClick={closeFile}
+                onClick={closeModal}
                 className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
               >
                 Hủy
@@ -387,7 +342,7 @@ const BooksPage = () => {
 
             <div className="mt-4 flex justify-end space-x-3">
               <button
-                onClick={closeAdd}
+                onClick={closeModal}
                 className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
               >
                 Hủy
@@ -458,7 +413,7 @@ const BooksPage = () => {
                   Đóng
                 </button>
                 <button
-                  onClick={handleEdit}
+                  onClick={() => opendModel("edit")}
                   className="flex space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground transition hover:bg-[#005f9e]"
                 >
                   <PencilSquareIcon className="h-5 w-5" />
@@ -510,7 +465,7 @@ const BooksPage = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4 mt-6">
               {visibleBooks.map((book, index) => (
-                <div key={index} onClick={() => handleCardClick(book)}>
+                <div key={index} onClick={() => opendModel("detail", book)}>
                   <BookCard
                     title={book.title}
                     author={book.author}

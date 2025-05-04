@@ -42,25 +42,17 @@ const StaffPage = () => {
   const currentStaff = filteredStaff.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredStaff.length / staffPerPage);
 
-  const handleAdd = () => setIsAddOpen(true);
-  const closeAdd = () => {
-    setIsAddOpen(false);
-    setIsEditOpen(false);
-  };
 
-  const handleCardClick = () => {
-    setIsDetailOpen(true);
-    setIsAddOpen(false);
-  };
+  const opendModel = (model: "add" | "detail" | "edit") => {
+    setIsAddOpen(model === "add");
+    setIsDetailOpen(model === "detail");
+    setIsEditOpen(model === "edit");
+  }
 
   const closeModal = () => {
     setIsDetailOpen(false);
-  };
-
-  const handleEdit = () => {
-    setIsEditOpen(true);
     setIsAddOpen(false);
-    setIsDetailOpen(false);
+    setIsEditOpen(false);
   };
 
   return (
@@ -95,7 +87,7 @@ const StaffPage = () => {
           <FilterButton
             icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thêm nhân viên"
-            onClick={handleAdd}
+            onClick={() => opendModel("add")}
           />
         </div>
 
@@ -117,7 +109,7 @@ const StaffPage = () => {
           <FilterButton
             icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thêm nhân viên"
-            onClick={handleAdd}
+            onClick={() => opendModel("add")}
           />
         </div>
       )}
@@ -126,7 +118,7 @@ const StaffPage = () => {
       <StaffFormModal
         isAddOpen={isAddOpen}
         isEditOpen={isEditOpen}
-        closeAdd={closeAdd}
+        closeAdd={closeModal}
       />
 
       {/* Popup chi tiết nhân viên */}
@@ -195,7 +187,7 @@ const StaffPage = () => {
 
             <div className="mt-4 flex justify-end space-x-3">
               <button
-                onClick={handleEdit}
+                onClick={() => opendModel("edit")}
                 className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-blue-600"
               >
                 Chỉnh sửa
@@ -250,7 +242,7 @@ const StaffPage = () => {
                 <td className="px-4 py-2 text-sm">{staff.gender}</td>
                 <td className="px-4 py-2 text-sm">{staff.email}</td>
                 <td
-                  onClick={handleCardClick}
+                  onClick={() => opendModel("detail")}
                   className="cursor-pointer px-4 py-2 text-sm text-[#0071BC] hover:underline"
                 >
                   Xem
