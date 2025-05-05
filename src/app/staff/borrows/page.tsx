@@ -1,66 +1,7 @@
-'use client';
-
-import React, { useState } from 'react';
-import { ExclamationTriangleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-
-const borrowedBooks = [
-  {
-    id: 'B001',
-    title: 'Lập trình C++ cơ bản',
-    author: 'Ngô Văn Lập',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-20T10:00:00Z',
-    dueAt: '2025-04-27T10:00:00Z',
-    notifyStatus: 'Chưa gửi',
-    price: 100000,
-  },
-  {
-    id: 'B002',
-    title: 'Học máy nâng cao',
-    author: 'Trần Minh Khoa',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-10T14:30:00Z',
-    dueAt: '2025-04-17T14:30:00Z',
-    notifyStatus: 'Đã gửi',
-    price: 150000,
-  },
-  {
-    id: 'B002',
-    title: 'Học máy nâng cao',
-    author: 'Trần Minh Khoa',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-10T14:30:00Z',
-    dueAt: '2025-04-17T14:30:00Z',
-    notifyStatus: 'Đã gửi',
-    price: 150000,
-  },
-  {
-    id: 'B002',
-    title: 'Học máy nâng cao',
-    author: 'Trần Minh Khoa',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-10T14:30:00Z',
-    dueAt: '2025-04-17T14:30:00Z',
-    notifyStatus: 'Đã gửi',
-    price: 150000,
-  },
-];
+"use client";
+import React, { useState, useEffect } from "react";
+import { supabaseClient } from "@/lib/client";
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 function numberToVietnameseWords(n: number): string {
   const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
@@ -95,6 +36,48 @@ export default function BorrowPage() {
   const [searchText, setSearchText] = useState('');
   const [selectedNotifyStatus, setSelectedNotifyStatus] = useState('');
   const [selectedDueStatus, setSelectedDueStatus] = useState('');
+  const [loan, setLoan] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLoan = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase
+        .from("loantransaction")
+        .select(`
+          *,
+          librarycard:card_id(*),
+          staff:staff_id(*),
+          loandetail!inner (
+            bookcopy:copy_id (*, booktitle(*))
+          )
+        `);
+
+      if (error) {
+        console.error("Error fetching books:", error);
+      } else {
+        setLoan(data || []);
+      }
+    };
+
+    fetchLoan();
+  }, []);
+
+  const borrowedBooks = loan.flatMap((l) =>
+    l.loandetail.map((detail: any) => ({
+      id: detail.bookcopy.id,
+      title: detail.bookcopy.booktitle.title,
+      author: detail.bookcopy.booktitle.author,
+      coverUrl: detail.bookcopy.booktitle.cover_url,
+      borrowedAt: l.borrowed_date,
+      dueAt: l.due_date,
+      borrower: l.librarycard.fullname,
+      birthdate: l.librarycard.birthdate,
+      address: l.librarycard.address,
+      phone: l.librarycard.phone,
+      notifyStatus: l.notify_status || 'Chưa gửi',
+      price: detail.bookcopy.booktitle.price,
+    }))
+  );
 
   const overdueBooks = borrowedBooks.filter(
     (book) => new Date(book.dueAt) < today
@@ -152,8 +135,8 @@ export default function BorrowPage() {
             className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
           >
             <option value="">Tất cả trạng thái hạn</option>
-            <option value="onTime">Còn hạn</option>
-            <option value="overdue">Trễ hạn</option>
+            <option value="onTime">Đã trả</option>
+            <option value="overdue">Trả muộn</option>
           </select>
           <button className="flex items-center justify-center rounded-md bg-primary px-4 py-3 text-white transition hover:bg-[#005f9e]">
             <MagnifyingGlassIcon className="h-5 w-5 text-primary-foreground" />
