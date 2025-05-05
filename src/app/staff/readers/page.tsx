@@ -9,8 +9,13 @@ import {
   CreditCardIcon,
   QueueListIcon,
   BookOpenIcon,
+  PencilSquareIcon,
+  TrashIcon
 } from "@heroicons/react/24/solid";
 import ReaderFormModal from "@/components/ReaderFormModal";
+import ReaderDetailModal from "@/components/ReaderDetailModel";
+import CardDetailModal from "@/components/CardDetailModel";
+import ExtendCardModal from "@/components/ExtendCardModel";
 
 const ReadersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,23 +27,8 @@ const ReadersPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const [pack, setPackage] = useState<any[]>([]);
   const [user, setUser] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchPackage = async () => {
-      const supabase = supabaseClient();
-      const { data, error } = await supabase.from("depositpackage").select("*");
-
-      if (error) {
-        console.error("Error fetching packages:", error);
-      } else {
-        setPackage([{ package_amount: "Tất cả", deposit_package_id: "Tất cả" }, ...data]);
-      }
-    };
-
-    fetchPackage();
-  }, []);
+  const [selectedReader, setSelectedReader] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -101,13 +91,18 @@ const ReadersPage = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  const opendModel = (model: "detail" | "card" | "extend" | "create" | "edit") => {
+  const opendModel = (
+    model: "detail" | "card" | "extend" | "create" | "edit",
+    reader?: any
+  ) => {
+    setSelectedReader(reader || null);
     setIsDetailOpen(model === "detail");
     setIsCardOpen(model === "card");
     setIsExtendOpen(model === "extend");
     setIsCreateOpen(model === "create");
     setIsEditOpen(model === "edit");
   };
+  
 
   const closeModal = () => {
     setIsDetailOpen(false);
@@ -205,6 +200,30 @@ const ReadersPage = () => {
         </div>
       )}
 
+      <ExtendCardModal
+        isOpen={isExtendOpen}
+        onClose={closeModal}
+        onConfirm={(newDate) => {
+        console.log("Ngày hết hạn mới:", newDate);
+        closeModal();
+      }}
+      />
+
+      <CardDetailModal
+        isOpen={isCardOpen}
+        onClose={closeModal}
+        onExtend={() => opendModel("extend")}
+        reader={selectedReader}
+      />
+
+      <ReaderDetailModal
+        isOpen={isDetailOpen}
+        onClose={closeModal}
+        onEdit={() => opendModel("edit", selectedReader)}
+        onCard={() => opendModel("card", selectedReader)}
+        reader={selectedReader}
+      />
+
       <ReaderFormModal
         isCreateOpen={isCreateOpen}
         isEditOpen={isEditOpen}
@@ -216,7 +235,7 @@ const ReadersPage = () => {
         {currentReaders.map((reader, index) => (
           <div
             key={index}
-            onClick={() => opendModel("detail")}
+            onClick={() => opendModel("detail", reader)}
             className="rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md"
           >
             <img
