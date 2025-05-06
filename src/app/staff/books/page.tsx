@@ -18,6 +18,8 @@ import {
 
 const BooksPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [selectedBook, setSelectedBook] = useState<any>(null);
@@ -73,7 +75,16 @@ const BooksPage = () => {
   }, []);
 
   const getBooksByCategory = (category: string) =>
-    books.filter((book) => book.category?.category_name === category);
+    books.filter((book) => {
+      const matchCategory =
+        category === "Tất cả" || book.category?.category_name === category;
+      const matchSearch =
+        book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.iswrittenby?.[0]?.author?.author_name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+      return matchCategory && matchSearch;
+    });
 
   const toggleExpand = (category: string) => {
     setExpandedCategories((prev) =>
@@ -93,7 +104,11 @@ const BooksPage = () => {
     setIsFileOpend(model === "file");
     setIsCategory(model === "category");
 
-    setSelectedBook(model === "detail" ? book : null);
+    if (model === "detail" || model === "edit") {
+      setSelectedBook(book);
+    } else {
+      setSelectedBook(null);
+    }
   };
 
   const closeModal = () => {
@@ -111,7 +126,9 @@ const BooksPage = () => {
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
-            placeholder="Tìm kiếm..."
+            placeholder="Tác giả / Sách..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
           />
           <select
@@ -125,9 +142,6 @@ const BooksPage = () => {
               </option>
             ))}
           </select>
-          <button className="flex items-center justify-center rounded-md bg-primary px-4 py-3 text-white transition hover:bg-[#005f9e]">
-            <MagnifyingGlassIcon className="h-5 w-5 text-primary-foreground" />
-          </button>
         </div>
 
         <div className="hidden space-x-2 md:flex">
@@ -208,6 +222,7 @@ const BooksPage = () => {
       <BookFormModal
         isOpen={isAddOpen || isEditOpen}
         isEdit={isEditOpen}
+        book={selectedBook}
         categories={categories}
         onClose={closeModal}
       />
@@ -216,7 +231,7 @@ const BooksPage = () => {
         <BookDetailModal
           book={selectedBook}
           onClose={closeModal}
-          onEdit={() => opendModel("edit")}
+          onEdit={() => opendModel("edit", selectedBook)}
         />
       )}
 

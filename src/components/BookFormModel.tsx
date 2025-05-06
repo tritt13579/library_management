@@ -5,48 +5,54 @@ import { supabaseClient } from "@/lib/client";
 const BookFormModal = ({
   isOpen,
   isEdit,
+  book,
   categories,
   onClose,
 }: {
   isOpen: boolean;
   isEdit: boolean;
+  book?: any;
   categories: string[];
   onClose: () => void;
 }) => {
-  const [publisher, setPublisher] = useState<any[]>([]);
-  const [shelf, setShelf] = useState<any[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
+  const [formValues, setFormValues] = useState({
+    title: "",
+    author: "",
+    publication_year: "",
+    isbn: "",
+    language: "",
+    edition: "",
+    acquisition_date: "",
+    price: "",
+    category: "",
+    publisher_id: "",
+    shelf_id: "",
+    description: "",
+    cover_image: "",
+  });
 
   useEffect(() => {
-    const fetchPublisher = async () => {
-      const supabase = supabaseClient();
-      const { data, error } = await supabase.from("publisher").select("*");
-
-      if (error) {
-        console.error("Error fetching publishers:", error);
-      } else {
-        setPublisher(data || []);
-      }
-    };
-
-    fetchPublisher();
-  }, []);
-
-  useEffect(() => {
-    const fetchShelf = async () => {
-      const supabase = supabaseClient();
-      const { data, error } = await supabase.from("shelf").select("*");
-
-      if (error) {
-        console.error("Error fetching publishers:", error);
-      } else {
-        setShelf(data || []);
-      }
-    };
-
-    fetchShelf();
-  }, []);
+    console.log("Dữ liệu sách được truyền vào:", book);
+    if (isEdit && book) {
+      setFormValues({
+        title: book.title || "",
+        author: book.iswrittenby?.[0]?.author?.author_name || "",
+        publication_year: book.publication_year || "",
+        isbn: book.isbn || "",
+        language: book.language || "",
+        edition: book.edition || "",
+        acquisition_date: book.bookcopy?.[0]?.acquisition_date || "",
+        price: book.bookcopy?.[0]?.price || "",
+        category: book.category?.category_name || "",
+        publisher_id: book.publisher?.publisher_name || "",
+        shelf_id: book.shelf?.location || "",
+        description: book.description || "",
+        cover_image: book.cover_image || "",
+      });
+    }
+  }, [isEdit, book]);
 
   if (!isOpen) return null;
 
@@ -57,69 +63,87 @@ const BookFormModal = ({
           {isEdit ? "Chỉnh sửa sách" : "Thêm sách mới"}
         </h2>
         <div className="grid grid-cols-1 gap-4">
-          <input
+        <input
             type="text"
             placeholder="Tên sách"
-            className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            value={formValues.title}
+            onChange={(e) => setFormValues({ ...formValues, title: e.target.value })}
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
           />
           <input
             type="text"
             placeholder="Tác giả"
-            className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            value={formValues.author}
+            onChange={(e) => setFormValues({ ...formValues, author: e.target.value })}
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
           />
-          <select className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]">
-            <option value="">Chọn nhà xuất bản</option>
-            {publisher.map((pub, index) => (
-              <option key={index} value={pub.publisher_id}>
-                {pub.publisher_name}
-              </option>
-            ))}
-          </select>
+          <input
+            type="text"
+            placeholder="Nhà xuất bản"
+            value={formValues.publisher_id}
+            onChange={(e) => setFormValues({ ...formValues, publisher_id: e.target.value })}
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
+          />
           <input
             type="text"
             placeholder="Năm xuất bản"
-            className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            value={formValues.publication_year}
+            onChange={(e) => setFormValues({ ...formValues, publication_year: e.target.value })}
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
           />
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="ISBN"
-              className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              value={formValues.isbn}
+              onChange={(e) => setFormValues({ ...formValues, isbn: e.target.value })}
+              className="rounded-md border border-gray-300 bg-input px-4 py-2"
             />
-            <select className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]">
-              <option value="">Kệ sách</option>
-              {shelf.map((she,index) => (
-                <option key={index} value={she.shelf__id}>
-                  {she.location}
-                </option>
-              ))}
-            </select>
+            <input
+            type="text"
+            placeholder="Kệ sách"
+            value={formValues.shelf_id}
+            onChange={(e) => setFormValues({ ...formValues, shelf_id: e.target.value })}
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
+          />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Ngôn ngữ"
-              className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              value={formValues.language}
+              onChange={(e) => setFormValues({ ...formValues, language: e.target.value })}
+              className="rounded-md border border-gray-300 bg-input px-4 py-2"
             />
             <input
               type="text"
               placeholder="Lần sửa đổi"
-              className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              value={formValues.edition}
+              onChange={(e) => setFormValues({ ...formValues, edition: e.target.value })}
+              className="rounded-md border border-gray-300 bg-input px-4 py-2"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Ngày mua"
-              className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              value={formValues.acquisition_date}
+              onChange={(e) => setFormValues({ ...formValues, acquisition_date: e.target.value })}
+              className="rounded-md border border-gray-300 bg-input px-4 py-2"
             />
             <input
               type="text"
               placeholder="Giá tiền"
-              className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+              value={formValues.price}
+              onChange={(e) => setFormValues({ ...formValues, price: e.target.value })}
+              className="rounded-md border border-gray-300 bg-input px-4 py-2"
             />
           </div>
-          <select className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]">
+          <select
+            value={formValues.category}
+            onChange={(e) => setFormValues({ ...formValues, category: e.target.value })}
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
+          >
             <option value="">Chọn thể loại</option>
             {categories
               .filter((c) => c !== "Tất cả")
@@ -131,8 +155,10 @@ const BookFormModal = ({
           </select>
           <textarea
             placeholder="Mô tả sách"
+            value={formValues.description}
+            onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
             rows={4}
-            className="rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            className="rounded-md border border-gray-300 bg-input px-4 py-2"
           />
           <div>
             <label className="mb-2 block font-medium text-gray-700">Ảnh bìa sách</label>
@@ -140,8 +166,8 @@ const BookFormModal = ({
               type="file"
               accept="image/*"
               onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) setSelectedImage(file);
+                const file = e.target.files?.[0];
+                if (file) setSelectedImage(file);
               }}
               className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-[#0071BC] file:py-2 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-[#005f9e]"
             />
@@ -163,7 +189,9 @@ const BookFormModal = ({
           >
             Hủy
           </button>
-          <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]">
+          <button
+            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
+          >
             Lưu sách
           </button>
         </div>
