@@ -30,23 +30,16 @@ export default function NotificationModal({
   onClose,
   numberToVietnameseWords,
 }: Props) {
-  // Tính số ngày trễ lớn nhất
-  const maxOverdueDays = Math.max(
-    ...books.map((b) =>
-      Math.floor((today.getTime() - new Date(b.dueAt).getTime()) / (1000 * 60 * 60 * 24))
-    ),
-    0
-  );
-
-  // Tính phạt từng sách
+  // Tính số ngày quá hạn và tiền phạt cho từng sách
   const penaltyBooks = books.map((b) => {
-    const overdueDays = Math.floor((today.getTime() - new Date(b.dueAt).getTime()) / (1000 * 60 * 60 * 24));
-    const daysToCharge = Math.max(overdueDays - 2, 0); // bắt đầu phạt từ ngày thứ 3
+    const dueDate = new Date(b.dueAt);
+    const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const overdueDays = Math.max(diffDays, 0);
+    const daysToCharge = Math.max(overdueDays - 2, 0); // phạt từ ngày thứ 3
     const penalty = daysToCharge * 100;
     return { ...b, overdueDays, penalty };
   });
 
-  // Tổng tiền phạt
   const totalPenalty = penaltyBooks.reduce((sum, b) => sum + b.penalty, 0);
 
   return (
@@ -59,7 +52,7 @@ export default function NotificationModal({
           <p>Ngày sinh: {borrowerInfo.birthdate}</p>
           <p>Địa chỉ: {borrowerInfo.address}</p>
           <p>Số điện thoại: {borrowerInfo.phone}</p>
-          
+
           <p className="mt-4 font-semibold">Danh sách mượn</p>
           <table className="w-full table-auto border border-collapse border-gray-300">
             <thead>
@@ -67,27 +60,26 @@ export default function NotificationModal({
                 <th className="border px-2 py-1 text-primary-foreground">STT</th>
                 <th className="border px-2 py-1 text-primary-foreground">Mã sách</th>
                 <th className="border px-2 py-1 text-primary-foreground">Tên sách</th>
-                <th className="border px-2 py-1 text-primary-foreground">Đơn giá</th>
+                <th className="border px-2 py-1 text-primary-foreground">Số ngày quá hạn</th>
+                <th className="border px-2 py-1 text-primary-foreground">Tiền phạt</th>
               </tr>
             </thead>
             <tbody>
-              {books.map((book, idx) => (
-                <tr key={idx}>
+              {penaltyBooks.map((book, idx) => (
+                <tr key={book.id}>
                   <td className="border px-2 py-1 text-center">{idx + 1}</td>
                   <td className="border px-2 py-1 text-center">{book.id}</td>
                   <td className="border px-2 py-1">{book.title}</td>
-                  <td className="border px-2 py-1 text-right">
-                    {typeof book.price === "number" ? book.price.toLocaleString() + "đ" : "N/A"}
-                  </td>
+                  <td className="border px-2 py-1 text-center">{book.overdueDays}</td>
+                  <td className="border px-2 py-1 text-right">{book.penalty.toLocaleString()}đ</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <p className="mt-2">Số ngày quá hạn: <strong>{maxOverdueDays}</strong></p>
-          <p>
-            Số tiền phạt: <strong>{totalPenalty.toLocaleString()}đ</strong>
-            {" "} (Viết bằng chữ: <strong>
+          <p className="mt-2">
+            Tổng tiền phạt: <strong>{totalPenalty.toLocaleString()}đ</strong>{" "}
+            (Viết bằng chữ: <strong>
               {Number.isNaN(totalPenalty)
                 ? "Không xác định"
                 : numberToVietnameseWords(Math.round(totalPenalty)) + " đồng"}

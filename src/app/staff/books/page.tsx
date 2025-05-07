@@ -28,6 +28,7 @@ const BooksPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isFileOpend, setIsFileOpend] = useState(false);
   const [isCategory, setIsCategory] = useState(false);
+  const [bookCodeQuery, setBookCodeQuery] = useState("");
 
   const [books, setBooks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -74,17 +75,38 @@ const BooksPage = () => {
     fetchCategories();
   }, []);
 
-  const getBooksByCategory = (category: string) =>
-    books.filter((book) => {
+  const filterByCopyId = (books: any[]) => {
+    const trimmedQuery = bookCodeQuery.trim();
+    if (!trimmedQuery) return books;
+  
+    return books.filter((book) =>
+      book.bookcopy?.some(
+        (copy: any) => String(copy.copy_id) === trimmedQuery
+      )
+    );
+  };
+  
+  const getBooksByCategory = (category: string) => {
+    let filteredBooks = books.filter((book) => {
       const matchCategory =
         category === "Tất cả" || book.category?.category_name === category;
+  
       const matchSearch =
         book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         book.iswrittenby?.[0]?.author?.author_name
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase());
+  
       return matchCategory && matchSearch;
     });
+  
+    if (bookCodeQuery.trim()) {
+      filteredBooks = filterByCopyId(filteredBooks);
+    }
+  
+    return filteredBooks;
+  };
+  
 
   const toggleExpand = (category: string) => {
     setExpandedCategories((prev) =>
@@ -129,6 +151,13 @@ const BooksPage = () => {
             placeholder="Tác giả / Sách..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+          />
+           <input
+            type="text"
+            placeholder="Mã sách..."
+            value={bookCodeQuery}
+            onChange={(e) => setBookCodeQuery(e.target.value)}
             className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
           />
           <select
