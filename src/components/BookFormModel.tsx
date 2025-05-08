@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { supabaseClient } from "@/lib/client";
-
 const BookFormModal = ({
   isOpen,
   isEdit,
@@ -16,7 +15,6 @@ const BookFormModal = ({
   onClose: () => void;
 }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-
   const [formValues, setFormValues] = useState({
     title: "",
     author: "",
@@ -32,7 +30,6 @@ const BookFormModal = ({
     description: "",
     cover_image: "",
   });
-
   useEffect(() => {
     console.log("Dữ liệu sách được truyền vào:", book);
     if (isEdit && book) {
@@ -51,11 +48,26 @@ const BookFormModal = ({
         description: book.description || "",
         cover_image: book.cover_image || "",
       });
+    } else {
+      setFormValues({
+        title: "",
+        author: "",
+        publication_year: "",
+        isbn: "",
+        language: "",
+        edition: "",
+        acquisition_date: "",
+        price: "",
+        category: "",
+        publisher_id: "",
+        shelf_id: "",
+        description: "",
+        cover_image: "",
+      });
+      setSelectedImage(null);
     }
   }, [isEdit, book]);
-
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
       <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
@@ -69,6 +81,7 @@ const BookFormModal = ({
             value={formValues.title}
             onChange={(e) => setFormValues({ ...formValues, title: e.target.value })}
             className="rounded-md border border-gray-300 bg-input px-4 py-2"
+            disabled={isEdit}
           />
           <input
             type="text"
@@ -76,6 +89,7 @@ const BookFormModal = ({
             value={formValues.author}
             onChange={(e) => setFormValues({ ...formValues, author: e.target.value })}
             className="rounded-md border border-gray-300 bg-input px-4 py-2"
+            disabled={isEdit}
           />
           <input
             type="text"
@@ -98,6 +112,7 @@ const BookFormModal = ({
               value={formValues.isbn}
               onChange={(e) => setFormValues({ ...formValues, isbn: e.target.value })}
               className="rounded-md border border-gray-300 bg-input px-4 py-2"
+              disabled={isEdit}
             />
             <input
             type="text"
@@ -199,5 +214,4 @@ const BookFormModal = ({
     </div>
   );
 };
-
 export default BookFormModal;

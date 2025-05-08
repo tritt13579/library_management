@@ -1,6 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { supabaseClient } from "@/lib/client";
 
+// Các kiểu dữ liệu
 interface Book {
   id: string;
   title: string;
@@ -23,6 +25,22 @@ interface Props {
   numberToVietnameseWords: (n: number) => string;
 }
 
+const getPenaltyValue = async () => {
+  const supabase = supabaseClient();
+  const { data, error } = await supabase
+    .from('systemsetting')
+    .select('setting_value')
+    .eq('setting_id', 2)
+    .single();
+
+  if (error || !data) {
+    console.error('Lỗi khi lấy giá trị phạt:', error);
+    return null; 
+  }
+
+  return parseInt(data.setting_value, 10); 
+};
+
 export default function NotificationModal({
   borrowerInfo,
   books,
@@ -30,13 +48,33 @@ export default function NotificationModal({
   onClose,
   numberToVietnameseWords,
 }: Props) {
+  const [penaltyRate, setPenaltyRate] = useState<number | null>(null); 
+
+  
+  useEffect(() => {
+    const fetchPenaltyValue = async () => {
+      const value = await getPenaltyValue();
+      if (value !== null) {
+        setPenaltyRate(value);
+      } else {
+        console.error('Không thể lấy giá trị tiền phạt từ Supabase');
+      }
+    };
+
+    fetchPenaltyValue();
+  }, []);
+
+  if (penaltyRate === null) {
+    return <div>Đang tải dữ liệu...</div>; 
+  }
+
   // Tính số ngày quá hạn và tiền phạt cho từng sách
   const penaltyBooks = books.map((b) => {
     const dueDate = new Date(b.dueAt);
     const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     const overdueDays = Math.max(diffDays, 0);
     const daysToCharge = Math.max(overdueDays - 2, 0); // phạt từ ngày thứ 3
-    const penalty = daysToCharge * 100;
+    const penalty = daysToCharge * penaltyRate; 
     return { ...b, overdueDays, penalty };
   });
 
@@ -62,6 +100,7 @@ export default function NotificationModal({
                 <th className="border px-2 py-1 text-primary-foreground">Tên sách</th>
                 <th className="border px-2 py-1 text-primary-foreground">Số ngày quá hạn</th>
                 <th className="border px-2 py-1 text-primary-foreground">Tiền phạt</th>
+                <th className="border px-2 py-1 text-primary-foreground">Cập nhật</th>
               </tr>
             </thead>
             <tbody>
@@ -72,6 +111,9 @@ export default function NotificationModal({
                   <td className="border px-2 py-1">{book.title}</td>
                   <td className="border px-2 py-1 text-center">{book.overdueDays}</td>
                   <td className="border px-2 py-1 text-right">{book.penalty.toLocaleString()}đ</td>
+                  <td className="border px-2 py-1 text-right">
+                    <a href="#" className="text-blue-500 hover:text-blue-700">Đã trả</a>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -82,8 +124,7 @@ export default function NotificationModal({
             (Viết bằng chữ: <strong>
               {Number.isNaN(totalPenalty)
                 ? "Không xác định"
-                : numberToVietnameseWords(Math.round(totalPenalty)) + " đồng"}
-            </strong>)
+                : numberToVietnameseWords(Math.round(totalPenalty)) + " đồng"}</strong>)
           </p>
         </div>
 
