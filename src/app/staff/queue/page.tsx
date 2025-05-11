@@ -1,200 +1,201 @@
 'use client';
+import React, { useState, useEffect } from "react";
+import { supabaseClient } from "@/lib/client";
 
-import React, { useState } from 'react';
-import {
-  MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
+interface Author {
+  author_name: string;
+}
 
-const books = [
-  {
-    id: 1,
-    code: 'MS001',
-    title: 'Dế Mèn Phiêu Lưu Ký',
-    author: 'Tô Hoài',
-    category: 'Thiếu nhi',
-    cover: '/images/books/vidubook.jpg',
-    status: 'Đang chờ',
-    statusColor: 'text-yellow-600',
-    currentReader: 'Trần Thị B',
-    queue: ['Nguyễn Văn C', 'Phạm Thị D', 'Lê Thị E', 'Hồ Thị N', 'Phan Văn M'],
-  },
-  {
-    id: 2,
-    code: 'MS002',
-    title: 'Harry Potter và Hòn Đá Phù Thủy',
-    author: 'J.K. Rowling',
-    category: 'Giả tưởng',
-    cover: '/images/books/vidubook.jpg',
-    status: 'Đã mượn',
-    statusColor: 'text-green-600',
-    currentReader: 'Lê Văn H',
-    queue: ['Ngô Thị I', 'Phạm Văn K'],
-  },
-  {
-    id: 3,
-    code: 'MS003',
-    title: 'Lão Hạc',
-    author: 'Nam Cao',
-    category: 'Văn học Việt Nam',
-    cover: '/images/books/vidubook.jpg',
-    status: 'Chưa mượn',
-    statusColor: 'text-gray-500',
-    currentReader: '',
-    queue: [],
-  },
-];
+interface Book {
+  title: string;
+  cover_image?: string;
+  iswrittenby: { author: Author }[];
+}
 
-const categories = ['Tất cả', 'Thiếu nhi', 'Giả tưởng', 'Văn học Việt Nam'];
-const statuses = ['Tất cả', 'Đang chờ', 'Đã mượn', 'Chưa mượn'];
+interface Reader {
+  first_name: string;
+  last_name?: string;
+}
+
+interface LibraryCard {
+  card_number: string;
+  reader: Reader;
+}
+
+interface Reservation {
+  reservation_status: string;
+  booktitle: Book;
+  library_card: LibraryCard;
+}
+
+interface QueueItem {
+  id: number;
+  position: number;
+  reservation: Reservation;
+}
+
+interface GroupedQueue {
+  title: string;
+  author: string;
+  cover_image?: string;
+  items: QueueItem[];
+}
 
 export default function QueuePage() {
-  const [searchText, setSearchText] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
-  const [selectedStatus, setSelectedStatus] = useState('Tất cả');
-  const [expandedQueues, setExpandedQueues] = useState<number[]>([]);
-  const maxVisible = 3;
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredBooks = books.filter((book) => {
-    const search = searchText.toLowerCase();
-    const matchesText =
-      book.title.toLowerCase().includes(search) ||
-      book.currentReader.toLowerCase().includes(search) ||
-      book.queue.some((name) => name.toLowerCase().includes(search));
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase
+        .from("reservationqueue")
+        .select(`
+          *,
+          reservation:reservation_id(
+            *, 
+            booktitle(
+              title,
+              cover_image,
+              iswrittenby!inner (
+                author:author_id ( author_name )
+              )
+            ),
+            library_card:card_id(
+              *,
+              reader(*)
+            )
+          )
+        `);
 
-    const matchesCategory =
-      selectedCategory === 'Tất cả' || book.category === selectedCategory;
+      if (error) {
+        console.error("Error fetching books:", error.message);
+      } else {
+        setQueue(data || []);
+      }
+    };
 
-    const matchesStatus =
-      selectedStatus === 'Tất cả' || book.status === selectedStatus;
+    fetchBooks();
+  }, []);
 
-    return matchesText && matchesCategory && matchesStatus;
-  });
+  const groupedQueues: GroupedQueue[] = Object.values(
+    queue.reduce((acc: { [key: string]: GroupedQueue }, item: QueueItem) => {
+      const title = item.reservation?.booktitle?.title ?? "Không rõ";
+      const author = item.reservation?.booktitle?.iswrittenby?.[0]?.author?.author_name ?? "Không rõ";
+      const cover_image = item.reservation?.booktitle?.cover_image;
+      const key = `${title}-${author}`;
 
-  const toggleQueue = (bookId: number) => {
-    setExpandedQueues((prev) =>
-      prev.includes(bookId) ? prev.filter((id) => id !== bookId) : [...prev, bookId]
-    );
-  };
+      if (!acc[key]) {
+        acc[key] = {
+          title,
+          author,
+          cover_image,
+          items: [],
+        };
+      }
+      acc[key].items.push(item);
+      return acc;
+    }, {})
+  );
+
+  const filteredQueues = groupedQueues
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        const title = group.title.toLowerCase();
+        const cardNumber = item.reservation?.library_card?.card_number?.toLowerCase() || "";
+        return (
+          title.includes(searchTerm.toLowerCase()) ||
+          cardNumber.includes(searchTerm.toLowerCase())
+        );
+      })
+    }))
+    .filter(group => group.items.length > 0);
 
   return (
-    <div className="space-y-6 p-6">
-      {/* --- Filter Menu --- */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-          />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-          >
-            {categories.map((cat, index) => (
-              <option key={index} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-          >
-            {statuses.map((status, index) => (
-              <option key={index} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-          <button className="flex items-center justify-center rounded-md bg-primary px-4 py-3 text-white transition hover:bg-[#005f9e]">
-            <MagnifyingGlassIcon className="h-5 w-5 text-primary-foreground" />
-          </button>
-        </div>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-4">Hàng đợi đặt sách</h1>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Tìm theo tên sách hoặc mã thẻ"
+          className="w-full md:w-1/2 border rounded-md px-4 py-2"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      {/* --- Danh sách sách hàng đợi --- */}
-      {filteredBooks.map((book) => {
-        const isExpanded = expandedQueues.includes(book.id);
-        const visibleQueue = isExpanded
-          ? book.queue
-          : book.queue.slice(0, maxVisible);
-
-        return (
-          <div
-            key={book.id}
-            className="w-full p-4 shadow-sm border rounded-xl bg-background"
-          >
-            <div className="flex items-start justify-between">
-              <img
-                src={book.cover}
-                alt="Ảnh sách"
-                className="h-28 w-20 object-cover rounded-md border"
-              />
-
-              <div className="flex-1 ml-4 space-y-1">
-                <h3 className="text-lg font-semibold text-primary">{book.title}</h3>
-                <p className="text-sm text-muted-foreground">Tác giả: {book.author}</p>
-                <p className="text-sm">Mã sách: <strong>{book.code}</strong></p>
-                <p className="text-sm">Thể loại: <strong>{book.category}</strong></p>
-                <p className="text-sm">
-                  <strong>Trạng thái:</strong>{' '}
-                  <span className={`${book.statusColor} font-medium`}>{book.status}</span>
-                </p>
-                {book.currentReader && (
-                  <p className="text-sm">
-                    <strong>Độc giả mượn:</strong> {book.currentReader}
-                  </p>
-                )}
+      {filteredQueues.length === 0 ? (
+        <p className="text-gray-500">Không tìm thấy kết quả.</p>
+      ) : (
+        filteredQueues.map((group, index) => (
+          <div key={index} className="border rounded-md shadow-md p-4">
+            <div className="flex items-start space-x-4 mb-4">
+              {group.cover_image && (
+                <img
+                  src={group.cover_image}
+                  alt={`Bìa sách ${group.title}`}
+                  className="w-20 h-28 object-cover rounded shadow"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/placeholder-cover.png';
+                  }}
+                />
+              )}
+              <div>
+                <h2 className="text-xl font-semibold">{group.title}</h2>
+                <p className="text-gray-700">Tác giả: {group.author}</p>
               </div>
             </div>
 
-            <div className="mt-3 border-t pt-2">
-              <p className="text-sm font-medium text-gray-700">Hàng đợi:</p>
-              {book.queue.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">Không có độc giả chờ</p>
-              ) : (
-                <>
-                  <ul className="list-disc ml-5 text-sm text-muted-foreground space-y-0.5">
-                    {visibleQueue.map((name, idx) => (
-                      <li key={idx}>{name}</li>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700 border rounded-md">
+                <thead className="bg-neutral-100 dark:bg-neutral-800">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-neutral-700 dark:text-neutral-200">STT</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-neutral-700 dark:text-neutral-200">Người đặt</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-neutral-700 dark:text-neutral-200">Thẻ thư viện</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-neutral-700 dark:text-neutral-200">Vị trí</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-neutral-700 dark:text-neutral-200">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
+                  {group.items
+                    .sort((a, b) => a.position - b.position)
+                    .map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="px-4 py-2 text-sm text-gray-700">{idx + 1}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">
+                          {item.reservation?.library_card?.reader
+                            ? `${item.reservation.library_card.reader.last_name ?? ''} ${item.reservation.library_card.reader.first_name ?? ''}`.trim() || 'Không rõ'
+                            : 'Không rõ'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-700">
+                          {item.reservation?.library_card?.card_number ?? '---'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{item.position}</td>
+                        <td className={`px-4 py-2 text-sm font-semibold ${getStatusColor(item.reservation?.reservation_status)}`}>
+                          {item.reservation?.reservation_status}
+                        </td>
+                      </tr>
                     ))}
-                  </ul>
-                  {book.queue.length > maxVisible && (
-                    <button
-                      onClick={() => toggleQueue(book.id)}
-                      className="mt-2 text-sm text-[#005f9e] hover:underline"
-                    >
-                      {isExpanded ? 'Ẩn bớt' : 'Xem thêm'}
-                    </button>
-                  )}
-                </>
-              )}
+                </tbody>
+              </table>
             </div>
           </div>
-        );
-      })}
+        ))
+      )}
     </div>
   );
 }
 
-const FilterButton = ({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
-  >
-    {icon}
-    <span className="text-sm">{label}</span>
-  </button>
-);
+function getStatusColor(status: string = '') {
+  switch (status) {
+    case 'Đang chờ':
+      return 'text-yellow-600';
+    case 'Đã xác nhận':
+      return 'text-red-600';
+    default:
+      return 'text-gray-600';
+  }
+}
