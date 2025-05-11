@@ -7,6 +7,7 @@ type PermissionContextType = {
   loading: boolean;
   fetchPermissions: () => Promise<void>;
   clearPermissions: () => void;
+  hasPermission: (permission: string) => boolean;
 };
 
 const PermissionContext = createContext<PermissionContextType | undefined>(
@@ -49,20 +50,30 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({
     setPermissions([]);
   };
 
+  const hasPermission = (permission: string): boolean => {
+    return permissions.includes(permission);
+  };
+
   useEffect(() => {
     fetchPermissions();
   }, []);
 
   return (
     <PermissionContext.Provider
-      value={{ permissions, loading, fetchPermissions, clearPermissions }}
+      value={{
+        permissions,
+        loading,
+        fetchPermissions,
+        clearPermissions,
+        hasPermission,
+      }}
     >
       {children}
     </PermissionContext.Provider>
   );
 };
 
-export const usePermissions = (): PermissionContextType => {
+export const usePermissions = () => {
   const context = useContext(PermissionContext);
   if (!context) {
     throw new Error("usePermissions must be used within a PermissionProvider");

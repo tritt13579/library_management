@@ -1,5 +1,6 @@
 import { getUser } from "@/auth/server";
 import ReaderHeader from "@/components/ReaderHeader";
+import RoleProtectedLayout from "@/components/RoleProtectedLayout";
 
 export default async function ReaderLayout({
   children,
@@ -8,11 +9,13 @@ export default async function ReaderLayout({
 }) {
   const user = await getUser();
   return (
+    // <RoleProtectedLayout requiredRole="reader">
     <div className="flex min-h-screen flex-col">
       <ReaderHeader user={user} />
       <main className="flex flex-1 flex-col px-4 pt-10 xl:px-8">
         {children}
       </main>
     </div>
+    // </RoleProtectedLayout>
   );
 }

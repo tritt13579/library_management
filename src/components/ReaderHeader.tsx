@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   UserIcon,
-  UserPlusIcon,
   MagnifyingGlassIcon,
   CreditCardIcon,
   Bars3Icon,
@@ -13,7 +12,7 @@ import {
 import { Button } from "./ui/button";
 import Link from "next/link";
 import DarkModeToggle from "./DarkModeToggle";
-import LogoutButton from "./LogoutButton";
+import UserDropdown from "./UserDropdown";
 
 const ReaderHeader = ({ user }: { user: any }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -64,7 +63,7 @@ const ReaderHeader = ({ user }: { user: any }) => {
               <DarkModeToggle />
 
               {user ? (
-                <LogoutButton />
+                <UserDropdown />
               ) : (
                 <>
                   <Button asChild variant="outline">
