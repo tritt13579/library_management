@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import BookDetailModal from "@/components/BookDetailModel";
+
+import React, { useState, useEffect, useCallback } from "react";
 import BookFormModal from "@/components/BookFormModel";
 import FileUploadModal from "@/components/FileUploadModel";
 import CategoryModal from "@/components/CategoryModel";
@@ -8,7 +8,6 @@ import BookCard from "./bookCard";
 import { supabaseClient } from "@/lib/client";
 
 import {
-  MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
   FolderPlusIcon,
@@ -16,9 +15,29 @@ import {
   CubeIcon,
 } from "@heroicons/react/24/solid";
 
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import BookTitleDetail from "@/components/BookTitleDetail";
+import { useToast } from "@/hooks/use-toast";
+
 const BooksPage = () => {
+  const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [searchQuery, setSearchQuery] = useState("");
+  const [bookCodeQuery, setBookCodeQuery] = useState("");
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
@@ -28,97 +47,121 @@ const BooksPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isFileOpend, setIsFileOpend] = useState(false);
   const [isCategory, setIsCategory] = useState(false);
-  const [bookCodeQuery, setBookCodeQuery] = useState("");
 
   const [books, setBooks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
-    const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
+    try {
       const supabase = supabaseClient();
-      const { data, error } = await supabase
-        .from("booktitle")
-        .select(`
+      const { data, error } = await supabase.from("booktitle").select(`
           *,
           category:category_id(category_name),
           iswrittenby!inner (
             author:author_id ( author_name )
           ),
-          bookcopy(*),
-          shelf:shelf__id(location),
+          bookcopy(*,
+            condition:condition_id(condition_name, description)
+          ),
+          shelf:shelf_id(location),
           publisher:publisher_id(publisher_name)
         `);
 
       if (error) {
         console.error("Error fetching books:", error);
+        toast({
+          title: "Lỗi",
+          description: "Không thể tải danh sách sách. Vui lòng thử lại sau.",
+          variant: "destructive",
+        });
       } else {
         setBooks(data || []);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch books:", err);
+      toast({
+        title: "Lỗi",
+        description: "Đã xảy ra lỗi khi tải dữ liệu.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
-    fetchBooks();
-  }, []);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
+  // Fetch categories
+  const fetchCategories = useCallback(async () => {
+    try {
       const supabase = supabaseClient();
       const { data, error } = await supabase.from("category").select("*");
 
       if (error) {
         console.error("Error fetching categories:", error);
+        toast({
+          title: "Lỗi",
+          description: "Không thể tải danh sách thể loại.",
+          variant: "destructive",
+        });
       } else {
-        const categoryNames = data.map((cat: any) => cat.category_name);
-        setCategories(["Tất cả", ...categoryNames]);
+        const names = data.map((c: any) => c.category_name);
+        setCategories(["Tất cả", ...names]);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    }
+  }, [toast]);
 
+  // Initial data loading
+  useEffect(() => {
+    fetchBooks();
     fetchCategories();
-  }, []);
+  }, [fetchBooks, fetchCategories]);
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchBooks();
+    }
+  }, [refreshTrigger, fetchBooks]);
 
   const filterByCopyId = (books: any[]) => {
-    const trimmedQuery = bookCodeQuery.trim();
-    if (!trimmedQuery) return books;
-  
+    const trimmed = bookCodeQuery.trim();
+    if (!trimmed) return books;
     return books.filter((book) =>
-      book.bookcopy?.some(
-        (copy: any) => String(copy.copy_id) === trimmedQuery
-      )
+      book.bookcopy?.some((copy: any) => String(copy.copy_id) === trimmed),
     );
   };
-  
+
   const getBooksByCategory = (category: string) => {
-    let filteredBooks = books.filter((book) => {
+    let filtered = books.filter((book) => {
       const matchCategory =
         category === "Tất cả" || book.category?.category_name === category;
-  
+
       const matchSearch =
         book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         book.iswrittenby?.[0]?.author?.author_name
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase());
-  
+
       return matchCategory && matchSearch;
     });
-  
+
     if (bookCodeQuery.trim()) {
-      filteredBooks = filterByCopyId(filteredBooks);
+      filtered = filterByCopyId(filtered);
     }
-  
-    return filteredBooks;
+
+    return filtered;
   };
-  
 
   const toggleExpand = (category: string) => {
     setExpandedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
-        : [...prev, category]
+        : [...prev, category],
     );
   };
 
   const opendModel = (
     model: "detail" | "add" | "edit" | "file" | "category",
-    book: any = null
+    book: any = null,
   ) => {
     setIsDetailOpen(model === "detail");
     setIsAddOpen(model === "add");
@@ -133,6 +176,16 @@ const BooksPage = () => {
     }
   };
 
+  const handleSuccess = () => {
+    setRefreshTrigger((prev) => prev + 1);
+
+    toast({
+      title: "Thành công",
+      description: "Dữ liệu đã được cập nhật thành công.",
+      variant: "success",
+    });
+  };
+
   const closeModal = () => {
     setIsDetailOpen(false);
     setSelectedBook(null);
@@ -144,98 +197,130 @@ const BooksPage = () => {
 
   return (
     <div className="p-6">
+      {/* Toolbar */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
+          <Input
             placeholder="Tác giả / Sách..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            className="min-w-[150px] flex-1 py-6"
           />
-           <input
-            type="text"
+          <Input
             placeholder="Mã sách..."
             value={bookCodeQuery}
             onChange={(e) => setBookCodeQuery(e.target.value)}
-            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            className="min-w-[150px] flex-1 py-6"
           />
-          <select
+          <Select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            onValueChange={(value) => setSelectedCategory(value)}
           >
-            {categories.map((cat, index) => (
-              <option key={index} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="min-w-[150px] flex-1 py-6">
+              <SelectValue placeholder="Chọn thể loại" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat, i) => (
+                <SelectItem key={i} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="hidden space-x-2 md:flex">
-          <FilterButton
-            icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Thêm sách"
-            onClick={() => opendModel("add")}
-          />
-          <FilterButton
-            icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Tải lên sách"
-            onClick={() => opendModel("file")}
-          />
-          <FilterButton
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />
+                <span className="text-sm">Thêm sách</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => opendModel("add")}>
+                Thêm tựa sách
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => console.log("Thêm bản sao sách")}
+              >
+                Thêm bản sao sách
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />
+                <span className="text-sm">Tải lên sách</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => opendModel("file")}>
+                Tải lên tựa sách
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => console.log("Tải lên bản sao sách")}
+              >
+                Tải lên bản sao sách
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <ActionButton
             icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thể loại"
             onClick={() => opendModel("category")}
           />
         </div>
 
-        <button
+        <Button
+          variant="outline"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-md border border-gray-300 p-2 text-[#0071BC] md:hidden"
+          className="md:hidden"
         >
           {isMobileMenuOpen ? (
             <XMarkIcon className="h-5 w-5" />
           ) : (
             <Bars3Icon className="h-5 w-5" />
           )}
-        </button>
+        </Button>
       </div>
 
+      {/* Mobile Filter Buttons */}
       {isMobileMenuOpen && (
         <div className="mt-4 flex flex-col space-y-4 md:hidden">
-          <div className="flex flex-col space-y-2">
-            <FilterButton
-              icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
-              label="Thêm sách"
-              onClick={() => opendModel("add")}
-            />
-            <FilterButton
-              icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
-              label="Tải lên sách"
-              onClick={() => opendModel("file")}
-            />
-            <FilterButton
-              icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
-              label="Thể loại"
-              onClick={() => opendModel("category")}
-            />
-          </div>
+          <ActionButton
+            icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
+            label="Thêm sách"
+            onClick={() => opendModel("add")}
+          />
+          <ActionButton
+            icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
+            label="Tải lên sách"
+            onClick={() => opendModel("file")}
+          />
+          <ActionButton
+            icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
+            label="Thể loại"
+            onClick={() => opendModel("category")}
+          />
         </div>
       )}
 
+      {/* Modals */}
       <CategoryModal
         isOpen={isCategory}
         categories={categories.filter((cat) => cat !== "Tất cả")}
         onClose={closeModal}
         onAdd={(newCat) => {
           setCategories((prev) => [...prev, newCat]);
-          // Xử lý
+          setRefreshTrigger((prev) => prev + 1);
         }}
         onDelete={(catToDelete) => {
           setCategories((prev) => prev.filter((c) => c !== catToDelete));
-          // xử lý
+          setRefreshTrigger((prev) => prev + 1);
         }}
       />
 
@@ -243,27 +328,37 @@ const BooksPage = () => {
         isOpen={isFileOpend}
         onClose={closeModal}
         onUpload={(file) => {
-        console.log("Đã chọn file:", file);
-        // xử lý upload
+          console.log("Đã chọn file:", file);
+          setRefreshTrigger((prev) => prev + 1);
         }}
       />
-       
+
       <BookFormModal
         isOpen={isAddOpen || isEditOpen}
         isEdit={isEditOpen}
         book={selectedBook}
-        categories={categories}
+        onSuccess={handleSuccess}
         onClose={closeModal}
       />
 
       {isDetailOpen && selectedBook && (
-        <BookDetailModal
+        <BookTitleDetail
           book={selectedBook}
           onClose={closeModal}
           onEdit={() => opendModel("edit", selectedBook)}
         />
       )}
 
+      {/* Books status */}
+      {books.length === 0 && (
+        <div className="my-10 text-center text-gray-500">
+          {refreshTrigger > 0
+            ? "Đang tải sách..."
+            : "Không có sách nào được tìm thấy."}
+        </div>
+      )}
+
+      {/* Book Grid by Category */}
       {(selectedCategory === "Tất cả"
         ? categories.filter((c) => c !== "Tất cả")
         : [selectedCategory]
@@ -277,25 +372,30 @@ const BooksPage = () => {
           : booksInCategory.slice(0, 4);
 
         return (
-          <div key={category}>
-            <div className="mt-6 mb-4 flex items-center justify-between">
+          <div key={category} className="book-category-section">
+            <div className="mb-4 mt-6 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-primary">{category}</h2>
               {booksInCategory.length > 4 && (
-                <button
-                  className="rounded-md border border-[#005f9e] px-3 py-1 text-sm text-[#005f9e] transition hover:underline"
+                <Button
+                  variant="outline"
                   onClick={() => toggleExpand(category)}
                 >
                   {isExpanded ? "Thu gọn ↑" : "Xem thêm →"}
-                </button>
+                </Button>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4 mt-6">
+            <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {visibleBooks.map((book, index) => (
-                <div key={index} onClick={() => opendModel("detail", book)}>
+                <div
+                  key={`${book.book_title_id || index}`}
+                  onClick={() => opendModel("detail", book)}
+                >
                   <BookCard
                     title={book.title}
-                    author={book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
+                    author={
+                      book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"
+                    }
                     image={book.cover_image}
                     category={book.category?.category_name}
                   />
@@ -309,7 +409,7 @@ const BooksPage = () => {
   );
 };
 
-const FilterButton = ({
+const ActionButton = ({
   icon,
   label,
   onClick,
@@ -318,13 +418,14 @@ const FilterButton = ({
   label: string;
   onClick?: () => void;
 }) => (
-  <button
+  <Button
+    variant="outline"
+    className="flex items-center space-x-2"
     onClick={onClick}
-    className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
   >
     {icon}
     <span className="text-sm">{label}</span>
-  </button>
+  </Button>
 );
 
 export default BooksPage;
