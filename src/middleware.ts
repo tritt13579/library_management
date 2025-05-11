@@ -1,5 +1,7 @@
+// src/middleware.ts
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseAdmin } from "@/lib/admin";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -37,18 +39,17 @@ export async function middleware(request: NextRequest) {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (path.startsWith("/staff")) {
-    if (!session) {
+  if (userError || !user) {
+    if (path.startsWith("/staff")) {
       const redirectUrl = new URL("/login", request.url);
       redirectUrl.searchParams.set("redirect", path);
       return NextResponse.redirect(redirectUrl);
     }
-  }
 
-  if (path.startsWith("/reader")) {
     const protectedReaderPaths = [
       "/reader/account",
       "/reader/favorites",
@@ -60,11 +61,40 @@ export async function middleware(request: NextRequest) {
         path === protectedPath || path.startsWith(`${protectedPath}/`),
     );
 
-    if (isProtectedPath && !session) {
+    if (isProtectedPath) {
       const redirectUrl = new URL("/auth/login", request.url);
       redirectUrl.searchParams.set("redirect", path);
       return NextResponse.redirect(redirectUrl);
     }
+
+    return response;
+  }
+
+  const userId = user.id;
+  let userRole = null;
+
+  const { data: readerData } = await supabaseAdmin
+    .from("reader")
+    .select("reader_id")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+
+  if (readerData) userRole = "reader";
+
+  const { data: staffData } = await supabaseAdmin
+    .from("staff")
+    .select("staff_id")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+
+  if (staffData) userRole = "staff";
+
+  if (path.startsWith("/staff") && userRole !== "staff") {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  }
+
+  if (path.startsWith("/reader") && userRole !== "reader") {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
   return response;
