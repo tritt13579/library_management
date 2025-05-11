@@ -1,26 +1,14 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FolderPlusIcon,
   MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { supabaseClient } from "@/lib/client";
 import StaffFormModal from "@/components/StaffFormModal";
-
-// Dữ liệu giả
-const allStaff = Array.from({ length: 30 }, (_, i) => ({
-  id: i + 1,
-  position:
-    i % 3 === 0 ? "Giám đốc" : i % 3 === 1 ? "Trưởng phòng" : "Nhân viên",
-  name: `Nhân viên ${i + 1}`,
-  birthdate: "01/01/1990",
-  gender: i % 2 === 0 ? "Nam" : "Nữ",
-  email: `nhanvien${i + 1}@example.com`,
-}));
-
-const categories = ["Tất cả", "Giám đốc", "Trưởng phòng", "Nhân viên"];
+import StaffDetailModal from "@/components/StaffDetailModel";
 
 const StaffPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,37 +18,66 @@ const StaffPage = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  const [role, setRole] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
+
   const staffPerPage = 10;
   const indexOfLast = currentPage * staffPerPage;
   const indexOfFirst = indexOfLast - staffPerPage;
 
   const filteredStaff =
     selectedCategory === "Tất cả"
-      ? allStaff
-      : allStaff.filter((s) => s.position === selectedCategory);
+      ? staff
+      : staff.filter(
+          (s) => s.role?.role_id?.toString() === selectedCategory.toString()
+        );
 
   const currentStaff = filteredStaff.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredStaff.length / staffPerPage);
 
-  const handleAdd = () => setIsAddOpen(true);
-  const closeAdd = () => {
-    setIsAddOpen(false);
-    setIsEditOpen(false);
-  };
+  useEffect(() => {
+    const fetchRole = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase.from("role").select("*");
 
-  const handleCardClick = () => {
-    setIsDetailOpen(true);
-    setIsAddOpen(false);
+      if (error) {
+        console.error("Error fetching roles:", error);
+      } else {
+        setRole([{ role_name: "Tất cả", role_id: "Tất cả" }, ...data]);
+      }
+    };
+
+    fetchRole();
+  }, []);
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase
+        .from("staff")
+        .select("*, role:role_id(*)");
+
+      if (error) {
+        console.error("Error fetching staff:", error);
+      } else {
+        setStaff(data);
+      }
+    };
+
+    fetchStaff();
+  }, []);
+
+  const opendModel = (model: "add" | "detail" | "edit") => {
+    setIsAddOpen(model === "add");
+    setIsDetailOpen(model === "detail");
+    setIsEditOpen(model === "edit");
   };
 
   const closeModal = () => {
     setIsDetailOpen(false);
-  };
-
-  const handleEdit = () => {
-    setIsEditOpen(true);
     setIsAddOpen(false);
-    setIsDetailOpen(false);
+    setIsEditOpen(false);
   };
 
   return (
@@ -79,9 +96,9 @@ const StaffPage = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
           >
-            {categories.map((cat, index) => (
-              <option key={index} value={cat}>
-                {cat}
+            {role.map((rol, index) => (
+              <option key={index} value={rol.role_id?.toString()}>
+                {rol.role_name}
               </option>
             ))}
           </select>
@@ -95,7 +112,7 @@ const StaffPage = () => {
           <FilterButton
             icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thêm nhân viên"
-            onClick={handleAdd}
+            onClick={() => opendModel("add")}
           />
         </div>
 
@@ -117,102 +134,26 @@ const StaffPage = () => {
           <FilterButton
             icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thêm nhân viên"
-            onClick={handleAdd}
+            onClick={() => opendModel("add")}
           />
         </div>
       )}
 
-      {/* Popup thêm/chỉnh sửa */}
+      <StaffDetailModal
+        isOpen={isDetailOpen}
+        staff={selectedStaff}
+        onClose={closeModal}
+        onEdit={() => opendModel("edit")}
+        onDelete={() => {
+          // xử lý xóa
+        }}
+      />
+
       <StaffFormModal
         isAddOpen={isAddOpen}
         isEditOpen={isEditOpen}
-        closeAdd={closeAdd}
+        closeAdd={closeModal}
       />
-
-      {/* Popup chi tiết nhân viên */}
-      {isDetailOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
-            <div className="mb-4 flex items-center space-x-4">
-              <img
-                src="images/logo/avatar.jpg"
-                alt="Avatar"
-                className="h-10 w-10 rounded-full object-cover"
-              />
-              <h2 className="text-2xl font-semibold text-primary">
-                Thông tin nhân viên
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Họ nhân viên:</span>
-                <span className="text-gray-700">Nguyễn Văn A</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Tên nhân viên:</span>
-                <span className="text-gray-700">Nguyễn Văn A</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Ngày sinh:</span>
-                <span className="text-gray-700">01/01/1990</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Giới tính:</span>
-                <span className="text-gray-700">Nam</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Email:</span>
-                <span className="text-gray-700">nguyenvana@example.com</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Chức vụ:</span>
-                <span className="text-gray-700">Quản lý</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Số điện thoại:</span>
-                <span className="text-gray-700">0123456789</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Địa chỉ:</span>
-                <span className="text-gray-700">
-                  123 Đường ABC, Quận 1, TP.HCM
-                </span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Ngày làm việc:</span>
-                <span className="text-gray-700">01/01/2021</span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex justify-end space-x-3">
-              <button
-                onClick={handleEdit}
-                className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-blue-600"
-              >
-                Chỉnh sửa
-              </button>
-              <button className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600">
-                Xóa
-              </button>
-              <button
-                onClick={closeModal}
-                className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Danh sách nhân viên */}
       <h1 className="mb-4 mt-6 text-2xl font-bold text-primary">
@@ -242,15 +183,28 @@ const StaffPage = () => {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-background">
             {currentStaff.map((staff) => (
-              <tr key={staff.id}>
-                <td className="px-4 py-2 text-sm">{staff.id}</td>
-                <td className="px-4 py-2 text-sm">{staff.position}</td>
-                <td className="px-4 py-2 text-sm">{staff.name}</td>
-                <td className="px-4 py-2 text-sm">{staff.birthdate}</td>
-                <td className="px-4 py-2 text-sm">{staff.gender}</td>
+              <tr key={staff.staff_id}>
+                <td className="px-4 py-2 text-sm">{staff.staff_id}</td>
+                <td className="px-4 py-2 text-sm">
+                  {staff.role?.role_name || "Không rõ"}
+                </td>
+                <td className="px-4 py-2 text-sm">
+                  {staff.last_name} {staff.first_name}
+                </td>
+                <td className="px-4 py-2 text-sm">{staff.date_of_birth}</td>
+                <td className="px-4 py-2 text-sm">
+                  {staff.gender === "F"
+                    ? "Nữ"
+                    : staff.gender === "M"
+                    ? "Nam"
+                    : "Khác"}
+                </td>
                 <td className="px-4 py-2 text-sm">{staff.email}</td>
                 <td
-                  onClick={handleCardClick}
+                  onClick={() => {
+                    setSelectedStaff(staff);
+                    opendModel("detail");
+                  }}
                   className="cursor-pointer px-4 py-2 text-sm text-[#0071BC] hover:underline"
                 >
                   Xem
@@ -261,7 +215,7 @@ const StaffPage = () => {
         </table>
       </div>
 
-      {/* Phân trang với nút Trước / Tiếp */}
+      {/* Phân trang */}
       <div className="mt-4 flex justify-center space-x-2">
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -299,7 +253,6 @@ const StaffPage = () => {
   );
 };
 
-// Nút bộ lọc chung
 const FilterButton = ({
   icon,
   label,
@@ -316,14 +269,6 @@ const FilterButton = ({
     {icon}
     <span className="text-sm">{label}</span>
   </button>
-);
-
-// Dòng thông tin trong chi tiết
-const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center space-x-2">
-    <span className="font-semibold">{label}:</span>
-    <span className="text-gray-700">{value}</span>
-  </div>
 );
 
 export default StaffPage;

@@ -1,66 +1,7 @@
-'use client';
-
-import React, { useState } from 'react';
-import { ExclamationTriangleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-
-const borrowedBooks = [
-  {
-    id: 'B001',
-    title: 'Lập trình C++ cơ bản',
-    author: 'Ngô Văn Lập',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-20T10:00:00Z',
-    dueAt: '2025-04-27T10:00:00Z',
-    notifyStatus: 'Chưa gửi',
-    price: 100000,
-  },
-  {
-    id: 'B002',
-    title: 'Học máy nâng cao',
-    author: 'Trần Minh Khoa',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-10T14:30:00Z',
-    dueAt: '2025-04-17T14:30:00Z',
-    notifyStatus: 'Đã gửi',
-    price: 150000,
-  },
-  {
-    id: 'B002',
-    title: 'Học máy nâng cao',
-    author: 'Trần Minh Khoa',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-10T14:30:00Z',
-    dueAt: '2025-04-17T14:30:00Z',
-    notifyStatus: 'Đã gửi',
-    price: 150000,
-  },
-  {
-    id: 'B002',
-    title: 'Học máy nâng cao',
-    author: 'Trần Minh Khoa',
-    coverUrl: 'images/books/vidubook.jpg',
-    borrower: 'Nguyễn Văn A',
-    birthdate: '1990-01-01',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123456789',
-    borrowedAt: '2025-04-10T14:30:00Z',
-    dueAt: '2025-04-17T14:30:00Z',
-    notifyStatus: 'Đã gửi',
-    price: 150000,
-  },
-];
+"use client";
+import React, { useState, useEffect } from "react";
+import { supabaseClient } from "@/lib/client";
+import NotificationModal from "@/components/NotificationModel";
 
 function numberToVietnameseWords(n: number): string {
   const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
@@ -95,9 +36,53 @@ export default function BorrowPage() {
   const [searchText, setSearchText] = useState('');
   const [selectedNotifyStatus, setSelectedNotifyStatus] = useState('');
   const [selectedDueStatus, setSelectedDueStatus] = useState('');
+  const [selectedLoanStatus, setSelectedLoanStatus] = useState('');
+  const [loan, setLoan] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLoan = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase
+        .from("loantransaction")
+        .select(`
+          *,
+          librarycard:card_id(*, reader(*)),
+          staff:staff_id(*),
+          loandetail!inner (
+            *,bookcopy:copy_id (*, booktitle(*))
+          )
+        `);
+
+      if (error) {
+        console.error("Error fetching books:", error);
+      } else {
+        setLoan(data || []);
+      }
+    };
+
+    fetchLoan();
+  }, []);
+
+  const borrowedBooks = loan.flatMap((l) =>
+    l.loandetail.map((detail: any) => ({
+      id: detail.bookcopy.copy_id,
+      title: detail.bookcopy.booktitle.title,
+      coverUrl: detail.bookcopy.booktitle.cover_url,
+      borrowedAt: l.transaction_date,
+      dueAt: l.due_date,
+      returnAt: detail.return_date,
+      borrower: l.librarycard.reader.last_name + " " + l.librarycard.reader.first_name,
+      birthdate: l.librarycard.reader.date_of_birth,
+      address: l.librarycard.reader.address,
+      phone: l.librarycard.reader.phone,
+      status: l.loan_status,
+      notifyStatus: l.notify_status || 'Chưa gửi',
+      price: detail.bookcopy.price,
+    }))
+  );
 
   const overdueBooks = borrowedBooks.filter(
-    (book) => new Date(book.dueAt) < today
+    (book) => new Date(book.dueAt) < today && book.status !== 'Đã trả'
   );
 
   const groupedOverdues = overdueBooks.reduce((acc: any, book) => {
@@ -114,20 +99,24 @@ export default function BorrowPage() {
     const matchesNotify =
       !selectedNotifyStatus || book.notifyStatus === selectedNotifyStatus;
 
-    const isOverdue = new Date(book.dueAt) < today;
+    const isOverdue = new Date(book.dueAt) < today && book.status !== 'Đã trả';
+
     const matchesDue =
       !selectedDueStatus ||
-      (selectedDueStatus === 'onTime' && !isOverdue) ||
+      (selectedDueStatus === 'onTime' && book.status === 'Đã trả') ||
       (selectedDueStatus === 'overdue' && isOverdue);
 
-    return matchesSearch && matchesNotify && matchesDue;
+    const matchesLoanStatus =
+      !selectedLoanStatus || book.status === selectedLoanStatus;
+
+    return matchesSearch && matchesNotify && matchesDue && matchesLoanStatus;
   });
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold">Sách đang mượn</h1>
+      <h1 className="text-2xl font-bold">Giao dịch mượn/trả</h1>
 
-      {/* --- Filter Menu --- */}
+      {/* Filter Section */}
       <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -147,47 +136,46 @@ export default function BorrowPage() {
             <option value="Chưa gửi">Chưa gửi</option>
           </select>
           <select
-            value={selectedDueStatus}
-            onChange={(e) => setSelectedDueStatus(e.target.value)}
+            value={selectedLoanStatus}
+            onChange={(e) => setSelectedLoanStatus(e.target.value)}
             className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
           >
-            <option value="">Tất cả trạng thái hạn</option>
-            <option value="onTime">Còn hạn</option>
-            <option value="overdue">Trễ hạn</option>
+            <option value="">Tất cả trạng thái mượn</option>
+            <option value="Đã trả">Đã trả</option>
+            <option value="Trả muộn">Trả muộn</option>
           </select>
-          <button className="flex items-center justify-center rounded-md bg-primary px-4 py-3 text-white transition hover:bg-[#005f9e]">
-            <MagnifyingGlassIcon className="h-5 w-5 text-primary-foreground" />
-          </button>
         </div>
       </div>
 
       {filteredBooks.map((book, index) => {
         const borrowedDate = new Date(book.borrowedAt);
         const dueDate = new Date(book.dueAt);
+        const isOverdue = dueDate < today && book.status !== 'Đã trả';
         const daysBorrowed = Math.floor((today.getTime() - borrowedDate.getTime()) / (1000 * 60 * 60 * 24));
-        const overdueDays = today > dueDate ? Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-        const isOverdue = overdueDays > 0;
+
+        let borderColor = 'border-gray-200';
+        if (book.status === 'Đã trả') borderColor = 'border-green-400';
+        else if (isOverdue) borderColor = 'border-red-300';
 
         return (
           <div
             key={index}
             onClick={() => isOverdue && setSelectedBorrower(book.borrower)}
-            className={`mt-6 mb-6 space-y-4 cursor-pointer flex items-start space-x-4 rounded-lg border p-4 shadow-sm ${isOverdue ? 'bg-background border-red-300' : 'bg-background border-gray-200'}`}
+            className={`mt-6 mb-6 space-y-4 cursor-pointer flex items-start space-x-4 rounded-lg border p-4 shadow-sm bg-background ${borderColor}`}
           >
             <img src={book.coverUrl} alt={book.title} className="w-20 h-28 object-cover rounded" />
             <div className="flex-1 space-y-1">
               <div className="font-medium text-lg">{book.title}</div>
-              <div className="text-sm text-gray-500 italic">Tác giả: {book.author}</div>
               <div className="text-sm text-gray-600">Người mượn: {book.borrower}</div>
               <div className="text-sm">Ngày mượn: {borrowedDate.toLocaleString()}</div>
-              <div className="text-sm">Số ngày đã mượn: {daysBorrowed} ngày</div>
-              <div className="text-sm">
-                Trạng thái:{' '}
-                {isOverdue ? (
-                  <span className="text-red-500 font-semibold">Trễ hạn {overdueDays} ngày</span>
-                ) : (
-                  <span className="text-green-600">Đúng hạn</span>
-                )}
+              {book.status !== 'Đã trả' && (
+                <div className="text-sm">Số ngày đã mượn: {daysBorrowed} ngày</div>
+              )}
+              {book.status === 'Đã trả' && book.returnAt && (
+                <div className="text-sm">Ngày trả: {new Date(book.returnAt).toLocaleString()}</div>
+              )}
+              <div className={`text-sm ${isOverdue ? 'text-red-500' : book.status === 'Đã trả' ? 'text-green-600' : ''}`}>
+                Trạng thái: {book.status}
               </div>
               <div className="text-sm">Thông báo: <span className="font-medium">{book.notifyStatus}</span></div>
             </div>
@@ -196,69 +184,18 @@ export default function BorrowPage() {
       })}
 
       {selectedBorrower && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="max-h-[90vh] w-11/12 max-w-3xl overflow-y-auto rounded-lg bg-background p-6 relative">
-            <h2 className="text-xl font-bold mb-4 text-primary">THÔNG BÁO SÁCH QUÁ HẠN</h2>
-            <div className="space-y-2">
-              <p>Ngày {today.getDate()} tháng {today.getMonth() + 1} năm {today.getFullYear()}</p>
-              <p>Họ và tên người mượn: <strong>{groupedOverdues[selectedBorrower][0].borrower}</strong></p>
-              <p>Ngày sinh: {groupedOverdues[selectedBorrower][0].birthdate}</p>
-              <p>Địa chỉ: {groupedOverdues[selectedBorrower][0].address}</p>
-              <p>Số điện thoại: {groupedOverdues[selectedBorrower][0].phone}</p>
-              <p>Ngày mượn: {new Date(groupedOverdues[selectedBorrower][0].borrowedAt).toLocaleDateString()}</p>
-              <p className="mt-4 font-semibold">Danh sách mượn</p>
-              <table className="w-full table-auto border border-collapse border-gray-300">
-                <thead>
-                  <tr className="bg-gray-500">
-                    <th className="border px-2 py-1 text-primary-foreground">STT</th>
-                    <th className="border px-2 py-1 text-primary-foreground">Mã sách</th>
-                    <th className="border px-2 py-1 text-primary-foreground">Tên sách</th>
-                    <th className="border px-2 py-1 text-primary-foreground">Đơn giá</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupedOverdues[selectedBorrower].map((book: any, idx: number) => (
-                    <tr key={idx}>
-                      <td className="border px-2 py-1 text-center">{idx + 1}</td>
-                      <td className="border px-2 py-1 text-center">{book.id}</td>
-                      <td className="border px-2 py-1">{book.title}</td>
-                      <td className="border px-2 py-1 text-right">{book.price.toLocaleString()}đ</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="mt-2">Số ngày quá hạn: <strong>{Math.max(...groupedOverdues[selectedBorrower].map((b: any) => Math.floor((today.getTime() - new Date(b.dueAt).getTime()) / (1000 * 60 * 60 * 24))))}</strong></p>
-              {
-                (() => {
-                  const penaltyBooks = groupedOverdues[selectedBorrower].map((b: any) => {
-                    const overdueDays = Math.floor((today.getTime() - new Date(b.dueAt).getTime()) / (1000 * 60 * 60 * 24));
-                    const penalty = Math.min(overdueDays * 0.01 * b.price, b.price);
-                    return { ...b, overdueDays, penalty };
-                  });
-                  const totalPenalty = penaltyBooks.reduce((sum: number, b: any) => sum + b.penalty, 0);
-                  return (
-                    <p>Số tiền phạt: <strong>{totalPenalty.toLocaleString()}đ</strong> (Viết bằng chữ: <strong>{numberToVietnameseWords(totalPenalty)} đồng</strong>)</p>
-                  );
-                })()
-              }
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setSelectedBorrower(null)}
-                className="rounded-md bg-primary text-primary-foreground px-4 py-2 hover:bg-gray-300"
-              >
-                Đóng
-              </button>
-              <button
-                onClick={() => alert('Đã gửi thông báo!')}
-                className="rounded-md bg-primary text-primary-foreground px-4 py-2 hover:bg-[#0071BC]"
-              >
-                Gửi thông báo
-              </button>
-            </div>
-          </div>
-        </div>
+        <NotificationModal
+          today={today}
+          books={groupedOverdues[selectedBorrower]}
+            borrowerInfo={{
+            borrower: groupedOverdues[selectedBorrower][0]?.borrower,
+            birthdate: groupedOverdues[selectedBorrower][0]?.birthdate,
+            address: groupedOverdues[selectedBorrower][0]?.address,
+            phone: groupedOverdues[selectedBorrower][0]?.phone,
+          }}
+          onClose={() => setSelectedBorrower(null)}
+          numberToVietnameseWords={numberToVietnameseWords}
+        />
       )}
     </div>
   );
