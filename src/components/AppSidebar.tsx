@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,8 +10,18 @@ import {
   Users,
   UserCog,
   Settings,
+  ShieldCheck,
+  SlidersHorizontal,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { usePermissions } from "@/providers/PermissionProvider";
+import { cn } from "@/lib/utils";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 import {
   Sidebar,
@@ -29,6 +39,7 @@ type MenuItem = {
   url: string;
   icon: React.ElementType;
   requiredPermission: string;
+  children?: MenuItem[];
 };
 
 const allItems: MenuItem[] = [
@@ -69,10 +80,24 @@ const allItems: MenuItem[] = [
     requiredPermission: "Quản lí thanh toán",
   },
   {
-    title: "Settings",
-    url: "/staff/settings",
+    title: "Setting",
+    url: "#", // Không cần link ở menu cha
     icon: Settings,
     requiredPermission: "Cài đặt",
+    children: [
+      {
+        title: "Phân quyền",
+        url: "/staff/setting/role-permission",
+        icon: ShieldCheck,
+        requiredPermission: "Cài đặt",
+      },
+      {
+        title: "Cấu hình hệ thống",
+        url: "/staff/setting/system-settings",
+        icon: SlidersHorizontal,
+        requiredPermission: "Cài đặt",
+      },
+    ],
   },
 ];
 
@@ -80,10 +105,52 @@ export function AppSidebar() {
   const { permissions, loading } = usePermissions();
   const pathname = usePathname();
 
+  // State to track which parent menus are open
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  // Check if the current path is within a parent menu to auto-expand it
+  const initialOpenState = useMemo(() => {
+    const initialState: Record<string, boolean> = {};
+
+    allItems.forEach((item) => {
+      if (item.children) {
+        // Check if any child path matches current path
+        const isActive = item.children.some((child) =>
+          pathname.startsWith(child.url),
+        );
+        if (isActive) {
+          initialState[item.title] = true;
+        }
+      }
+    });
+
+    return initialState;
+  }, [pathname]);
+
+  // Set initial open state on component mount
+  React.useEffect(() => {
+    setOpenMenus(initialOpenState);
+  }, [initialOpenState]);
+
+  const toggleMenu = (title: string) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
   const allowedItems = useMemo(() => {
-    return allItems.filter((item) =>
-      permissions.includes(item.requiredPermission),
-    );
+    return allItems
+      .filter((item) => permissions.includes(item.requiredPermission))
+      .map((item) => {
+        if (item.children) {
+          const allowedChildren = item.children.filter((child) =>
+            permissions.includes(child.requiredPermission),
+          );
+          return { ...item, children: allowedChildren };
+        }
+        return item;
+      });
   }, [permissions]);
 
   if (loading) {
@@ -108,19 +175,79 @@ export function AppSidebar() {
           <SidebarGroupLabel>Library Management System</SidebarGroupLabel>
           <SidebarGroupContent className="pt-2">
             <SidebarMenu>
-              {allowedItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link
-                      href={item.url}
-                      className={pathname === item.url ? "bg-accent" : ""}
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {allowedItems.map((item) => {
+                if (item.children && item.children.length > 0) {
+                  const isOpen = openMenus[item.title];
+                  const isAnyChildActive = item.children.some(
+                    (child) => pathname === child.url,
+                  );
+
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <Collapsible
+                        open={isOpen}
+                        onOpenChange={() => toggleMenu(item.title)}
+                        className="w-full"
+                      >
+                        <CollapsibleTrigger className="flex w-full items-center rounded-md p-2 hover:bg-accent">
+                          <div className="flex w-full items-center justify-between">
+                            <div className="flex items-center">
+                              <item.icon className="mr-2 h-4 w-4" />
+                              <span
+                                className={cn(
+                                  isAnyChildActive && "font-medium",
+                                )}
+                              >
+                                {item.title}
+                              </span>
+                            </div>
+                            {isOpen ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-1 space-y-1 pl-6">
+                            {item.children.map((child) => (
+                              <Link
+                                key={child.title}
+                                href={child.url}
+                                className={cn(
+                                  "flex items-center rounded-md p-2 text-sm hover:bg-accent",
+                                  pathname === child.url
+                                    ? "bg-accent font-medium"
+                                    : "",
+                                )}
+                              >
+                                <child.icon className="mr-2 h-4 w-4" />
+                                <span>{child.title}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </SidebarMenuItem>
+                  );
+                }
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href={item.url}
+                        className={
+                          pathname === item.url ? "bg-accent font-medium" : ""
+                        }
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

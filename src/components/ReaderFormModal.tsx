@@ -91,7 +91,10 @@ const ReaderFormModal = ({
     };
 
     try {
-      const response = await axios.post("/api/reader/save", body);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/save`,
+        body,
+      );
       if (response.data.success) {
         alert("Thêm độc giả thành công!");
         closeCreate();
