@@ -1,12 +1,13 @@
 "use client";
+
 import React from "react";
 
 interface StaffDetailModalProps {
   isOpen: boolean;
   staff: any;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit: (staff: any) => void;
+  onDelete: (deletedId: string) => void; 
 }
 
 const StaffDetailModal = ({
@@ -17,6 +18,35 @@ const StaffDetailModal = ({
   onDelete,
 }: StaffDetailModalProps) => {
   if (!isOpen || !staff) return null;
+
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch("/api/staff/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ staffId: staff.staff_id }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        alert(result.error || "Xóa nhân viên thất bại.");
+        return;
+      }
+
+      alert("Xóa nhân viên thành công.");
+      onDelete(staff.staff_id); 
+      onClose();
+    } catch (error) {
+      console.error("Lỗi khi xóa nhân viên:", error);
+      alert("Lỗi hệ thống.");
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
@@ -34,7 +64,10 @@ const StaffDetailModal = ({
         <div className="grid grid-cols-1 gap-4">
           <InfoRow label="Họ và Tên" value={`${staff.last_name} ${staff.first_name}`} />
           <InfoRow label="Ngày sinh" value={staff.date_of_birth} />
-          <InfoRow label="Giới tính" value={staff.gender === "F" ? "Nữ" : staff.gender === "M" ? "Nam" : "Khác"} />
+          <InfoRow
+            label="Giới tính"
+            value={staff.gender === "F" ? "Nữ" : staff.gender === "M" ? "Nam" : "Khác"}
+          />
           <InfoRow label="Email" value={staff.email} />
           <InfoRow label="Chức vụ" value={staff.role?.role_name || "Không rõ"} />
           <InfoRow label="Số điện thoại" value={staff.phone} />
@@ -43,13 +76,13 @@ const StaffDetailModal = ({
         </div>
         <div className="mt-4 flex justify-end space-x-3">
           <button
-            onClick={onEdit}
+            onClick={() => onEdit(staff)}
             className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-blue-600"
           >
             Chỉnh sửa
           </button>
           <button
-            onClick={onDelete}
+            onClick={handleDelete}
             className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600"
           >
             Xóa

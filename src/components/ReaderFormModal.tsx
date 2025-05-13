@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { supabaseClient } from "@/lib/client";
@@ -6,10 +8,12 @@ const ReaderFormModal = ({
   isCreateOpen,
   isEditOpen,
   closeCreate,
+  reader,
 }: {
   isCreateOpen: boolean;
   isEditOpen: boolean;
   closeCreate: () => void;
+  reader?: any;
 }) => {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -52,8 +56,46 @@ const ReaderFormModal = ({
     fetchDepositPackages();
   }, []);
 
+  useEffect(() => {
+    if (isEditOpen && reader) {
+      setFormData({
+        first_name: reader.first_name || "",
+        last_name: reader.last_name || "",
+        date_of_birth: reader.date_of_birth || "",
+        gender: reader.gender || "",
+        address: reader.address || "",
+        phone: reader.phone || "",
+        email: reader.email || "",
+        photo_url: reader.photo_url || "",
+        card_type: reader.librarycard?.[0]?.card_type?.includes("Mượn")
+          ? "Mượn"
+          : "Đọc",
+        deposit_package_id:
+          reader.librarycard?.[0]?.deposit_package_id?.toString() || "",
+      });
+    }
+  }, [isEditOpen, reader]);
+
+  useEffect(() => {
+    if (!isCreateOpen && !isEditOpen) {
+      setFormData({
+        first_name: "",
+        last_name: "",
+        date_of_birth: "",
+        gender: "",
+        address: "",
+        phone: "",
+        email: "",
+        photo_url: "",
+        card_type: "",
+        deposit_package_id: "",
+      });
+      setImageFile(null);
+    }
+  }, [isCreateOpen, isEditOpen]);
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -61,8 +103,7 @@ const ReaderFormModal = ({
 
   const handleSubmit = async () => {
     const supabase = supabaseClient();
-
-    let uploadedImageUrl = "";
+    let uploadedImageUrl = formData.photo_url;
 
     if (imageFile) {
       const fileName = `avatars/readers/${Date.now()}_${imageFile.name}`;
@@ -85,6 +126,7 @@ const ReaderFormModal = ({
 
     const body = {
       ...formData,
+      readerId: reader?.reader_id || undefined,
       deposit_package_id: parseInt(formData.deposit_package_id),
       card_type: formData.card_type === "Mượn" ? "Thẻ mượn" : "Thẻ đọc",
       photo_url: uploadedImageUrl,
@@ -93,8 +135,9 @@ const ReaderFormModal = ({
     try {
       const response = await axios.post("/api/reader/save", body);
       if (response.data.success) {
-        alert("Thêm độc giả thành công!");
+        alert(isEditOpen ? "Cập nhật độc giả thành công!" : "Thêm độc giả thành công!");
         closeCreate();
+        window.location.reload();
       } else {
         alert("Có lỗi xảy ra.");
       }
@@ -109,7 +152,7 @@ const ReaderFormModal = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
         <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
           <h2 className="mb-4 text-2xl font-semibold text-primary">
-            {isCreateOpen ? "Thêm độc giả" : "Chỉnh sửa"}
+            {isCreateOpen ? "Thêm độc giả" : "Chỉnh sửa độc giả"}
           </h2>
 
           <div className="grid grid-cols-1 gap-4">
@@ -210,6 +253,7 @@ const ReaderFormModal = ({
                 ))}
               </select>
             </div>
+
             <div className="flex flex-col">
               <label className="mb-1 text-sm font-medium text-gray-700">
                 Ảnh thẻ
@@ -220,6 +264,13 @@ const ReaderFormModal = ({
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 className="rounded-md border border-gray-300 bg-input px-4 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-[#0071BC] file:px-4 file:py-2 file:text-white hover:file:bg-[#005f9e]"
               />
+              {formData.photo_url && !imageFile && (
+                <img
+                  src={formData.photo_url}
+                  alt="Ảnh cũ"
+                  className="mt-2 h-24 w-24 rounded object-cover"
+                />
+              )}
             </div>
           </div>
 
@@ -234,7 +285,7 @@ const ReaderFormModal = ({
               onClick={handleSubmit}
               className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-[#005f9e]"
             >
-              Lưu độc giả
+              {isEditOpen ? "Cập nhật" : "Lưu độc giả"}
             </button>
           </div>
         </div>

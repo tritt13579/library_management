@@ -9,8 +9,6 @@ import {
   CreditCardIcon,
   QueueListIcon,
   BookOpenIcon,
-  PencilSquareIcon,
-  TrashIcon
 } from "@heroicons/react/24/solid";
 import ReaderFormModal from "@/components/ReaderFormModal";
 import ReaderDetailModal from "@/components/ReaderDetailModel";
@@ -141,9 +139,6 @@ const ReadersPage = () => {
               </option>
             ))}
           </select>
-          <button className="flex items-center justify-center rounded-md bg-primary px-4 py-3 text-white transition hover:bg-[#005f9e]">
-            <MagnifyingGlassIcon className="h-5 w-5 text-primary-foreground" />
-          </button>
         </div>
 
         <div className="hidden space-x-2 md:flex">
@@ -228,6 +223,7 @@ const ReadersPage = () => {
         isCreateOpen={isCreateOpen}
         isEditOpen={isEditOpen}
         closeCreate={closeModal}
+        reader={selectedReader}
       />
 
       {/* DANH SÁCH ĐỘC GIẢ */}

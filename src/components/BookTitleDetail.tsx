@@ -58,6 +58,33 @@ const BookTitleDetail = ({
     }
   };
 
+  const handleDeleteCopy = async (copyId: number) => {
+  const confirm = window.confirm("Bạn có chắc chắn muốn xóa bản sao này?");
+  if (!confirm) return;
+
+  try {
+    const res = await fetch("/api/book/deletecopy", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ copy_id: copyId }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.error || "Xóa bản sao thất bại");
+      return;
+    }
+
+    alert("Đã xóa bản sao thành công");
+    window.location.reload(); 
+  } catch (error) {
+    console.error("Lỗi khi xóa:", error);
+    alert("Lỗi hệ thống khi xóa bản sao");
+  }
+};
+
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
       <div className="flex max-h-[90vh] w-5/6 max-w-5xl flex-col rounded-lg bg-background p-8 lg:flex-row">
@@ -135,29 +162,37 @@ const BookTitleDetail = ({
                     </Button>
                   )}
                 </div>
+
                 {showCopies && book.bookcopy && book.bookcopy.length > 0 && (
                   <div className="mt-3 space-y-2">
-                    {book.bookcopy.map((copy: any, index: number) => (
+                    {book.bookcopy.map((copy: any) => (
                       <div
                         key={copy.copy_id}
-                        className="cursor-pointer rounded-md border border-border p-3 hover:bg-muted"
-                        onClick={() => handleCopyClick(copy)}
+                        className="rounded-md border border-border p-3 hover:bg-muted group"
                       >
-                        <div className="flex justify-between">
-                          <p className="font-medium text-primary">
-                            Mã bản sao: {copy.copy_id}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Trạng thái: {copy.condition?.condition_name || "Không rõ"}
-                          </p>
+                        <div className="flex justify-between items-start">
+                          <div
+                            className="cursor-pointer"
+                            onClick={() => handleCopyClick(copy)}
+                          >
+                            <p className="font-medium text-primary">
+                              Mã bản sao: {copy.copy_id}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Trạng thái: {copy.condition?.condition_name || "Không rõ"}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Ngày nhập:{" "}
+                              {new Date(copy.acquisition_date).toLocaleDateString("vi-VN")}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Giá: {copy.price.toLocaleString("vi-VN")} VNĐ
+                            </p>
+                          </div>
+                          <button className="text-red-600 text-sm hover:underline ml-4" onClick={() => handleDeleteCopy(copy.copy_id)}>
+                            Xóa
+                          </button>
                         </div>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Ngày nhập:{" "}
-                          {new Date(copy.acquisition_date).toLocaleDateString("vi-VN")}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Giá: {copy.price.toLocaleString("vi-VN")} VNĐ
-                        </p>
                       </div>
                     ))}
                   </div>
