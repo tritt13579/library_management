@@ -230,24 +230,14 @@ const BooksPage = () => {
         </div>
 
         <div className="hidden space-x-2 md:flex">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-2">
-                <FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />
-                <span className="text-sm">Thêm sách</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => opendModel("add")}>
-                Thêm tựa sách
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => console.log("Thêm bản sao sách")}
-              >
-                Thêm bản sao sách
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="outline"
+            className="flex items-center space-x-2"
+            onClick={() => opendModel("add")}
+          >
+            <FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />
+            <span className="text-sm">Thêm sách</span>
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
