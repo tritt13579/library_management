@@ -2,6 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { supabaseClient } from "@/lib/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface StaffFormModalProps {
   isAddOpen: boolean;
@@ -34,6 +42,8 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const isOpen = isAddOpen || isEditOpen;
+
   useEffect(() => {
     if (staffData && isEditOpen) {
       setFirstName(staffData.first_name || "");
@@ -51,15 +61,9 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   useEffect(() => {
     const supabase = supabaseClient();
     const fetchRoles = async () => {
-      const { data, error } = await supabase
-        .from("role")
-        .select("role_id, role_name");
+      const { data, error } = await supabase.from("role").select("role_id, role_name");
       if (!error && data) {
-        const mapped = data.map((r: any) => ({
-          id: r.role_id,
-          name: r.role_name,
-        }));
-        setRoles(mapped);
+        setRoles(data.map((r: any) => ({ id: r.role_id, name: r.role_name })));
       }
     };
     fetchRoles();
@@ -115,14 +119,14 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
     }
   };
 
-  if (!isAddOpen && !isEditOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
-        <h2 className="mb-4 text-2xl font-semibold text-primary">
-          {isAddOpen ? "Thêm nhân viên" : "Chỉnh sửa nhân viên"}
-        </h2>
+    <Dialog open={isOpen} onOpenChange={closeAdd}>
+      <DialogContent className="max-h-[90vh] w-5/6 max-w-2xl overflow-y-auto bg-background p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-semibold text-primary">
+            {isAddOpen ? "Thêm nhân viên" : "Chỉnh sửa nhân viên"}
+          </DialogTitle>
+        </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4">
           <input
@@ -155,12 +159,12 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
               onChange={(e) => setGender(e.target.value)}
               className="rounded-md border border-gray-300 bg-input px-4 py-2"
             >
-              <option value="" disabled>Chọn giới tính</option>
+              <option value="">Chọn giới tính</option>
               <option value="Nam">Nam</option>
               <option value="Nữ">Nữ</option>
             </select>
             <input
-              type="text"
+              type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -209,29 +213,24 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
           />
         </div>
 
-        <div className="mt-4 flex justify-end space-x-3">
-          <button
+        <DialogFooter className="mt-4 flex justify-end space-x-3">
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => {
               resetForm();
               closeAdd();
             }}
-            className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
             disabled={loading}
-            type="button"
           >
             Hủy
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e] disabled:opacity-70"
-            disabled={loading}
-            type="button"
-          >
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "Đang lưu..." : "Lưu"}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -1,5 +1,16 @@
 "use client";
+
 import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface FileUploadModalProps {
   isOpen: boolean;
@@ -7,9 +18,11 @@ interface FileUploadModalProps {
   onUpload?: (file: File) => void;
 }
 
-const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, onUpload }) => {
-  if (!isOpen) return null;
-
+const FileUploadModal: React.FC<FileUploadModalProps> = ({
+  isOpen,
+  onClose,
+  onUpload,
+}) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -24,36 +37,30 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, onUp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="w-full max-w-md space-y-6 rounded-lg bg-background p-8">
-        <h2 className="text-2xl font-semibold text-primary">Tải lên tài liệu</h2>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Tải lên tài liệu</DialogTitle>
+        </DialogHeader>
+
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-foreground">
-            Chọn file (.xlsx, .xls, .docx, .doc)
-          </label>
-          <input
+          <Label htmlFor="file-upload">Chọn file (.xlsx, .xls, .docx, .doc)</Label>
+          <Input
+            id="file-upload"
             type="file"
             accept=".xlsx,.xls,.docx,.doc"
-            className="block w-full rounded-md border border-gray-300 bg-input px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
             onChange={handleFileChange}
           />
         </div>
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
-            onClick={onClose}
-            className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-          >
+
+        <DialogFooter className="pt-4 space-x-2">
+          <Button variant="secondary" onClick={onClose}>
             Hủy
-          </button>
-          <button
-            onClick={handleUpload}
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
-          >
-            Tải lên
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+          <Button onClick={handleUpload}>Tải lên</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -1,13 +1,22 @@
 "use client";
 
 import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 
 interface StaffDetailModalProps {
   isOpen: boolean;
   staff: any;
   onClose: () => void;
   onEdit: (staff: any) => void;
-  onDelete: (deletedId: string) => void; 
+  onDelete: (deletedId: string) => void;
 }
 
 const StaffDetailModal = ({
@@ -40,7 +49,7 @@ const StaffDetailModal = ({
       }
 
       alert("Xóa nhân viên thành công.");
-      onDelete(staff.staff_id); 
+      onDelete(staff.staff_id);
       onClose();
     } catch (error) {
       console.error("Lỗi khi xóa nhân viên:", error);
@@ -49,18 +58,11 @@ const StaffDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
-        <div className="mb-4 flex items-center space-x-4">
-          <img
-            src="images/logo/avatar.jpg"
-            alt="Avatar"
-            className="h-10 w-10 rounded-full object-cover"
-          />
-          <h2 className="text-2xl font-semibold text-primary">
-            Thông tin nhân viên
-          </h2>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-h-[90vh] w-5/6 max-w-2xl space-y-4 overflow-y-auto rounded-lg bg-background p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-semibold text-primary">Thông tin nhân viên</DialogTitle>
+        </DialogHeader>
         <div className="grid grid-cols-1 gap-4">
           <InfoRow label="Họ và Tên" value={`${staff.last_name} ${staff.first_name}`} />
           <InfoRow label="Ngày sinh" value={staff.date_of_birth} />
@@ -74,28 +76,28 @@ const StaffDetailModal = ({
           <InfoRow label="Địa chỉ" value={staff.address} />
           <InfoRow label="Ngày làm việc" value={staff.hire_date} />
         </div>
-        <div className="mt-4 flex justify-end space-x-3">
-          <button
+        <DialogFooter>
+          <Button
             onClick={() => onEdit(staff)}
-            className="rounded-md bg-[#0071BC] px-4 py-2 text-white hover:bg-blue-600"
+            className="bg-[#0071BC] text-white hover:bg-blue-600"
           >
             Chỉnh sửa
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleDelete}
-            className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+            className="bg-red-500 text-white hover:bg-red-600"
           >
             Xóa
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClose}
-            className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
+            className="bg-accent-foreground text-muted-foreground"
           >
             Đóng
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

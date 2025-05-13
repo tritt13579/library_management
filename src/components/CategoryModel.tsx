@@ -1,5 +1,16 @@
 "use client";
+
 import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -18,63 +29,59 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 }) => {
   const [newCategory, setNewCategory] = useState("");
 
-  if (!isOpen) return null;
+  const handleAdd = () => {
+    if (newCategory.trim()) {
+      onAdd(newCategory.trim());
+      setNewCategory("");
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="w-full max-w-md space-y-6 rounded-lg bg-background p-8">
-        <h2 className="text-2xl font-semibold text-primary">Quản lý thể loại</h2>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Quản lý thể loại</DialogTitle>
+        </DialogHeader>
 
         {/* Thêm thể loại mới */}
         <div className="flex space-x-2">
-          <input
+          <Input
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            type="text"
             placeholder="Tên thể loại mới"
-            className="flex-1 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
           />
-          <button
-            onClick={() => {
-              if (newCategory.trim()) {
-                onAdd(newCategory.trim());
-                setNewCategory("");
-              }
-            }}
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
-          >
-            Thêm
-          </button>
+          <Button onClick={handleAdd}>Thêm</Button>
         </div>
 
         {/* Danh sách thể loại */}
-        <ul className="max-h-60 space-y-2 overflow-y-auto">
-          {categories.map((category, index) => (
-            <li
-              key={index}
-              className="flex items-center justify-between border-b border-gray-200 pb-1"
-            >
-              <span className="text-foreground">{category}</span>
-              <button
-                onClick={() => onDelete(category)}
-                className="text-sm text-red-500 hover:text-red-700"
+        <ScrollArea className="max-h-60 space-y-2 pr-2">
+          <ul className="space-y-2">
+            {categories.map((category, index) => (
+              <li
+                key={index}
+                className="flex items-center justify-between border-b border-border pb-1"
               >
-                Xóa
-              </button>
-            </li>
-          ))}
-        </ul>
+                <span>{category}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500 hover:text-red-700"
+                  onClick={() => onDelete(category)}
+                >
+                  Xóa
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </ScrollArea>
 
-        <div className="flex justify-end pt-4">
-          <button
-            onClick={onClose}
-            className="rounded-md bg-accent-foreground px-4 py-2 text-muted-foreground"
-          >
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
             Đóng
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

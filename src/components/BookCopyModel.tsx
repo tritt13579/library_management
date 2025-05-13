@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const BookCopyModal = ({
   isOpen,
@@ -18,7 +19,7 @@ const BookCopyModal = ({
 }) => {
   const [acquisitionDate, setAcquisitionDate] = useState("");
   const [price, setPrice] = useState("");
-  const [conditionId, setConditionId] = useState("1"); 
+  const [conditionId, setConditionId] = useState("1");
 
   const handleSubmit = async () => {
     const formData = new FormData();
@@ -46,7 +47,7 @@ const BookCopyModal = ({
       }
 
       alert("Thêm bản sao thành công");
-      onSuccess(); 
+      onSuccess();
       onClose();
       setAcquisitionDate("");
       setPrice("");
@@ -61,12 +62,12 @@ const BookCopyModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="w-full max-w-md rounded-xl bg-background p-6 shadow-xl relative">
-        <h2 className="mb-4 text-xl font-semibold text-primary">
-          Thêm bản sao mới
-        </h2>
-
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-full max-w-md rounded-xl bg-background p-6 shadow-xl">
+        <DialogHeader>
+          <DialogTitle>Thêm bản sao mới</DialogTitle>
+        </DialogHeader>
+        
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground">
@@ -102,14 +103,14 @@ const BookCopyModal = ({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <DialogFooter className="mt-6 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Hủy
           </Button>
           <Button onClick={handleSubmit}>Lưu</Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

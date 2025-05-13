@@ -2,6 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { supabaseClient } from "@/lib/client";
 import NotificationModal from "@/components/NotificationModel";
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 
 function numberToVietnameseWords(n: number): string {
   const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
@@ -118,32 +126,42 @@ export default function BorrowPage() {
 
       {/* Filter Section */}
       <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
+        <div className="flex items-center gap-2">
+          <Input
             type="text"
             placeholder="Tìm kiếm..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            className="min-w-[150px] flex-1 py-6"
           />
-          <select
+
+          <Select
             value={selectedNotifyStatus}
-            onChange={(e) => setSelectedNotifyStatus(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            onValueChange={(value) => setSelectedNotifyStatus(value === "all" ? "" : value)}
           >
-            <option value="">Tất cả trạng thái thông báo</option>
-            <option value="Đã gửi">Đã gửi</option>
-            <option value="Chưa gửi">Chưa gửi</option>
-          </select>
-          <select
+            <SelectTrigger className="min-w-[150px] flex-1 py-6">
+              <SelectValue placeholder="Tất cả trạng thái thông báo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả trạng thái thông báo</SelectItem>
+              <SelectItem value="Đã gửi">Đã gửi</SelectItem>
+              <SelectItem value="Chưa gửi">Chưa gửi</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
             value={selectedLoanStatus}
-            onChange={(e) => setSelectedLoanStatus(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            onValueChange={(value) => setSelectedLoanStatus(value === "all" ? "" : value)}
           >
-            <option value="">Tất cả trạng thái mượn</option>
-            <option value="Đã trả">Đã trả</option>
-            <option value="Trả muộn">Trả muộn</option>
-          </select>
+            <SelectTrigger className="min-w-[150px] flex-1 py-6">
+              <SelectValue placeholder="Tất cả trạng thái mượn" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả trạng thái mượn</SelectItem>
+              <SelectItem value="Đã trả">Đã trả</SelectItem>
+              <SelectItem value="Trả muộn">Trả muộn</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

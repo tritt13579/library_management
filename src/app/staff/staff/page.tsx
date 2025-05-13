@@ -8,6 +8,16 @@ import {
 import { supabaseClient } from "@/lib/client";
 import StaffFormModal from "@/components/StaffFormModal";
 import StaffDetailModal from "@/components/StaffDetailModel";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 const StaffPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -106,46 +116,53 @@ const StaffPage = () => {
     <div className="p-6">
       {/* Bộ lọc + Tìm kiếm + Thêm */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo ID hoặc tên..."
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="ID / Tên..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            className="min-w-[150px] flex-1 py-6"
           />
 
-          <select
+          <Select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            onValueChange={(value) => setSelectedCategory(value)}
           >
-            {role.map((rol, index) => (
-              <option key={index} value={rol.role_id?.toString()}>
-                {rol.role_name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="min-w-[150px] flex-1 py-6">
+              <SelectValue placeholder="Chọn chức vụ" />
+            </SelectTrigger>
+            <SelectContent>
+              {role.map((rol, index) => (
+                <SelectItem key={index} value={rol.role_id?.toString()}>
+                  {rol.role_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="hidden space-x-2 md:flex">
-          <FilterButton
-            icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Thêm nhân viên"
+          <Button
+            variant="outline"
             onClick={() => openModal("add")}
-          />
+            className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
+          >
+            <FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />
+            <span className="text-sm">Thêm nhân viên</span>
+          </Button>
         </div>
 
-        <button
+        <Button
+          variant="outline"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="rounded-md border border-gray-300 p-2 text-[#0071BC] md:hidden"
         >
-          {isMobileMenuOpen ? (
-            <XMarkIcon className="h-5 w-5" />
+        {isMobileMenuOpen ? (
+          <XMarkIcon className="h-5 w-5" />
           ) : (
             <Bars3Icon className="h-5 w-5" />
           )}
-        </button>
+        </Button>
       </div>
 
       {isMobileMenuOpen && (
