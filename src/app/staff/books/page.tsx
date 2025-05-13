@@ -268,7 +268,7 @@ const BooksPage = () => {
         <Button
           variant="outline"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden"
+          className="md:hidden flex justify-start p-4"
         >
           {isMobileMenuOpen ? (
             <XMarkIcon className="h-5 w-5" />
@@ -410,7 +410,7 @@ const ActionButton = ({
 }) => (
   <Button
     variant="outline"
-    className="flex items-center space-x-2"
+    className="flex justify-start space-x-2"
     onClick={onClick}
   >
     {icon}

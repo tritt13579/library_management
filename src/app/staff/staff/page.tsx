@@ -155,7 +155,7 @@ const StaffPage = () => {
         <Button
           variant="outline"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-md border border-gray-300 p-2 text-[#0071BC] md:hidden"
+          className="md:hidden flex justify-start p-4"
         >
         {isMobileMenuOpen ? (
           <XMarkIcon className="h-5 w-5" />

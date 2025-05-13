@@ -115,15 +115,15 @@ const ReadersPage = () => {
         </div>
 
         <div className="hidden md:flex space-x-2">
-          <FilterButton icon={<CreditCardIcon className="icon" />} label="Tạo thẻ" onClick={() => openModal('create') } />
-          <Link href="/staff/queue"><FilterButton icon={<QueueListIcon className="icon" />} label="Hàng đợi" /></Link>
-          <Link href="/staff/borrows"><FilterButton icon={<BookOpenIcon className="icon" />} label="Sách mượn" /></Link>
+          <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create') } />
+          <Link href="/staff/queue"><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
+          <Link href="/staff/borrows"><FilterButton icon={<BookOpenIcon className="icon text-[#0071BC] me-1" />} label="Sách mượn" /></Link>
         </div>
 
         <Button
           variant="outline"
           size="icon"
-          className="md:hidden w-full"
+          className="md:hidden w-full flex justify-start p-4"
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
         >
           {isMobileMenuOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
@@ -132,9 +132,9 @@ const ReadersPage = () => {
 
       {isMobileMenuOpen && (
         <div className="mt-4 flex flex-col space-y-4 md:hidden w-full">
-          <FilterButton icon={<CreditCardIcon className="icon" />} label="Tạo thẻ" onClick={() => openModal('create')} />
-          <Link href="/staff/queue" className=''><FilterButton icon={<QueueListIcon className="icon" />} label="Hàng đợi" /></Link>
-          <Link href="/staff/borrows" className=''><FilterButton icon={<BookOpenIcon className="icon" />} label="Sách mượn" /></Link>
+          <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create')} />
+          <Link href="/staff/queue" className='md:w-full'><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
+          <Link href="/staff/borrows" className='md:w-full'><FilterButton icon={<BookOpenIcon className="icon text-[#0071BC] me-1" />} label="Sách mượn" /></Link>
         </div>
       )}
 
@@ -218,7 +218,7 @@ const FilterButton = ({ icon, label, onClick }: {
 }) => (
   <Button
     variant="outline"
-    className="flex items-center gap-2"
+    className="flex justify-start space-x-2"
     onClick={onClick}
   >
     {icon}
