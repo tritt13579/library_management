@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabaseClient } from '@/lib/client';
 import {
   Bars3Icon, XMarkIcon, CreditCardIcon,
-  QueueListIcon, BookOpenIcon
+  QueueListIcon, CalendarDateRangeIcon
 } from '@heroicons/react/24/solid';
 
 import ReaderFormModal from '@/components/ReaderFormModal';
@@ -15,6 +15,7 @@ import ExtendCardModal from '@/components/ExtendCardModel';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useToast } from "@/hooks/use-toast";
 import {
   Select, SelectTrigger, SelectValue,
   SelectContent, SelectItem
@@ -24,9 +25,11 @@ const cardStatuses = ['Tất cả', 'Còn hạn', 'Chưa gia hạn'];
 const readersPerPage = 6;
 
 const ReadersPage = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [cardStatus, setCardStatus] = useState('Tất cả');
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [modals, setModals] = useState({
@@ -58,7 +61,16 @@ const ReadersPage = () => {
     };
 
     fetchReaders();
-  }, []);
+  }, [refreshTrigger]);
+
+  const handleSuccess = () => {
+    setRefreshTrigger((prev) => prev + 1);
+    toast({
+      title: "Thành công",
+      description: "Dữ liệu đã được cập nhật thành công.",
+      variant: "success",
+    });
+  };
 
   const filteredReaders = readers.filter((r) => {
     const card = r.librarycard?.[0];
@@ -117,6 +129,7 @@ const ReadersPage = () => {
         <div className="hidden md:flex space-x-2">
           <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create') } />
           <Link href="/staff/queue"><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
+          <Link href="/staff/queue"><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
         </div>
 
         <Button
@@ -133,6 +146,7 @@ const ReadersPage = () => {
         <div className="mt-4 flex flex-col space-y-4 md:hidden w-full">
           <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create')} />
           <Link href="/staff/queue" className='md:w-full'><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
+          <Link href="/staff/queue" className='md:w-full'><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
         </div>
       )}
 
@@ -185,8 +199,7 @@ const ReadersPage = () => {
         isOpen={modals.extend}
         onClose={closeModals}
         readerId={selectedReader?.reader_id}
-        onSuccess={(newExpiryDate) => {
-        }}
+        onSuccess={handleSuccess}
       />
 
       <CardDetailModal isOpen={modals.card} onClose={closeModals} onExtend={(reader) => openModal('extend', reader)} reader={selectedReader} />
@@ -197,6 +210,7 @@ const ReadersPage = () => {
         onEdit={() => openModal('edit', selectedReader)}
         onCard={() => openModal('card', selectedReader)}
         reader={selectedReader}
+        onSuccess={handleSuccess}
       />
 
       <ReaderFormModal
@@ -204,6 +218,7 @@ const ReadersPage = () => {
         isEditOpen={modals.edit}
         closeCreate={closeModals}
         reader={selectedReader}
+        onSuccess={handleSuccess}
       />
     </div>
   );
@@ -216,7 +231,7 @@ const FilterButton = ({ icon, label, onClick }: {
 }) => (
   <Button
     variant="outline"
-    className="flex justify-start space-x-2"
+    className="flex justify-start w-full space-x-2"
     onClick={onClick}
   >
     {icon}

@@ -10,12 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExtendCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   readerId: number;
-  onSuccess: (newExpiryDate: string) => void;
+  onSuccess?: () => void;
 }
 
 const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
@@ -24,7 +25,7 @@ const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
   readerId,
   onSuccess,
 }) => {
-
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -47,7 +48,9 @@ const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
         throw new Error(data.error || "Gia hạn thất bại");
       }
 
-      alert("Gia hạn thẻ thành công!");
+      toast({ title: "Gia hạn thành công", variant: "success" });
+      onSuccess?.();
+      onClose();
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra");
     } finally {

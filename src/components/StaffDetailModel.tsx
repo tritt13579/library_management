@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ interface StaffDetailModalProps {
   onClose: () => void;
   onEdit: (staff: any) => void;
   onDelete: (deletedId: string) => void;
+  onSuccess?: () => void;
 }
 
 const StaffDetailModal = ({
@@ -25,7 +27,9 @@ const StaffDetailModal = ({
   onClose,
   onEdit,
   onDelete,
+  onSuccess
 }: StaffDetailModalProps) => {
+  const { toast } = useToast();
   if (!isOpen || !staff) return null;
 
   const handleDelete = async () => {
@@ -44,16 +48,17 @@ const StaffDetailModal = ({
       const result = await res.json();
 
       if (!res.ok) {
-        alert(result.error || "Xóa nhân viên thất bại.");
+        console.log(result.error || "Xóa nhân viên thất bại.");
         return;
       }
 
-      alert("Xóa nhân viên thành công.");
       onDelete(staff.staff_id);
+      toast({ title: "Xóa nhân viên thành công", variant: "success" });
+      onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Lỗi khi xóa nhân viên:", error);
-      alert("Lỗi hệ thống.");
+      console.log("Lỗi hệ thống.");
     }
   };
 

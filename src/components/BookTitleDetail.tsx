@@ -10,23 +10,26 @@ import {
 import BookCopyDetail from "./BookCopyDetail";
 import BookCopyModal from "@/components/BookCopyModel";
 import { Button } from "./ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 
 const BookTitleDetail = ({
   book,
   onClose,
   onEdit,
+  onSuccess
 }: {
   book: any;
   onClose: () => void;
   onEdit: () => void;
+  onSuccess?: () => void;
 }) => {
+  const { toast } = useToast();
   const [selectedCopy, setSelectedCopy] = useState<any>(null);
   const [showCopies, setShowCopies] = useState(false);
   const [activeModal, setActiveModal] = useState<"copy" | "edit" | null>(null);
@@ -59,12 +62,12 @@ const BookTitleDetail = ({
         return;
       }
 
-      alert("Xóa sách thành công.");
+      toast({ title: "Xóa sách thành công", variant: "success" });
+      onSuccess?.();
       onClose();
-      location.reload();
     } catch (err) {
       console.error("Lỗi khi xóa:", err);
-      alert("Lỗi hệ thống. Không thể xóa.");
+      console.log("Lỗi hệ thống. Không thể xóa.");
     }
   };
 
@@ -82,12 +85,13 @@ const BookTitleDetail = ({
       const result = await res.json();
 
       if (!res.ok) {
-        alert(result.error || "Xóa bản sao thất bại");
+        console.log(result.error || "Xóa bản sao thất bại");
         return;
       }
 
-      alert("Đã xóa bản sao thành công");
-      window.location.reload();
+      toast({ title: "Xóa bản sao thành công", variant: "success" });
+      onSuccess?.();
+      onClose();
     } catch (error) {
       console.error("Lỗi khi xóa:", error);
       alert("Lỗi hệ thống khi xóa bản sao");
@@ -106,6 +110,8 @@ const BookTitleDetail = ({
               bookTitle={book}
               bookCopy={selectedCopy}
               onBack={handleBackToTitle}
+              onSuccess={onSuccess}
+              onClose={onClose}
             />
           ) : (
             <>

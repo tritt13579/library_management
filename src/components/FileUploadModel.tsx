@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,41 +16,77 @@ import { Input } from "@/components/ui/input";
 interface FileUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload?: (file: File) => void;
+  onSuccess: (result: any) => void;
+  uploadUrl: string; 
+  title?: string;
+  description?: string;
 }
 
 const FileUploadModal: React.FC<FileUploadModalProps> = ({
   isOpen,
   onClose,
-  onUpload,
+  onSuccess,
+  uploadUrl,
+  title = "Tải lên file Excel",
+  description = "Chọn một file Excel (.xlsx hoặc .xls) để tải dữ liệu lên hệ thống.",
 }) => {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      console.log("Selected file:", file);
-      onUpload?.(file);
+  const fileRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUpload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return alert("Vui lòng chọn file Excel");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      const resultText = await response.text();
+      let result: any;
+
+      try {
+        result = JSON.parse(resultText);
+      } catch (err) {
+        console.error("Không thể parse kết quả JSON:", resultText);
+        return;
+      }
+
+      if (response.ok) {
+        console.log(`${result.message}`);
+        if (result.errors?.length > 0) {
+          console.warn("Một số dòng lỗi:", result.errors);
+        }
+        onSuccess(result);
+      } else {
+        alert(result?.error || "Đã xảy ra lỗi.");
+      }
+    } catch (err) {
+      console.error("Lỗi upload:", err);
+    } finally {
+      onClose();
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const handleUpload = () => {
-    console.log("Uploading file...");
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Tải lên tài liệu</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
-          <Label htmlFor="file-upload">Chọn file (.xlsx, .xls, .docx, .doc)</Label>
+          <Label htmlFor="file-upload">Chọn file (.xlsx, .xls)</Label>
           <Input
+            ref={fileRef}
             id="file-upload"
             type="file"
-            accept=".xlsx,.xls,.docx,.doc"
-            onChange={handleFileChange}
+            accept=".xlsx,.xls"
           />
         </div>
 

@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
   const { data: settingData, error: settingError } = await supabaseAdmin
     .from("systemsetting")
     .select("setting_value")
-    .eq("setting_name", "Thời hạn thẻ")
+    .eq("setting_id", 11)
     .single();
 
   if (settingError || !settingData) {

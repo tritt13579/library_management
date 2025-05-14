@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import BookFormModal from "@/components/BookFormModel";
 import FileUploadModal from "@/components/FileUploadModel";
-import CategoryModal from "@/components/CategoryModel";
 import BookCard from "./bookCard";
 import { supabaseClient } from "@/lib/client";
 
@@ -12,7 +11,6 @@ import {
   XMarkIcon,
   FolderPlusIcon,
   ArrowUpOnSquareIcon,
-  CubeIcon,
 } from "@heroicons/react/24/solid";
 
 import { Input } from "@/components/ui/input";
@@ -24,12 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import BookTitleDetail from "@/components/BookTitleDetail";
 import { useToast } from "@/hooks/use-toast";
 
@@ -47,6 +40,8 @@ const BooksPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isFileOpend, setIsFileOpend] = useState(false);
   const [isCategory, setIsCategory] = useState(false);
+  const [uploadType, setUploadType] = useState<"bookTitle" | "bookCopy" | null>(null);
+
 
   const [books, setBooks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -162,12 +157,17 @@ const BooksPage = () => {
   const opendModel = (
     model: "detail" | "add" | "edit" | "file" | "category",
     book: any = null,
+    type: "bookTitle" | "bookCopy" | null = null
   ) => {
     setIsDetailOpen(model === "detail");
     setIsAddOpen(model === "add");
     setIsEditOpen(model === "edit");
     setIsFileOpend(model === "file");
     setIsCategory(model === "category");
+
+    if (model === "file") {
+    setUploadType(type); 
+    }
 
     if (model === "detail" || model === "edit") {
       setSelectedBook(book);
@@ -239,30 +239,23 @@ const BooksPage = () => {
             <span className="text-sm">Thêm sách</span>
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-2">
-                <ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />
-                <span className="text-sm">Tải lên sách</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => opendModel("file")}>
-                Tải lên tựa sách
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => console.log("Tải lên bản sao sách")}
-              >
-                Tải lên bản sao sách
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="outline"
+            className="flex items-center space-x-2"
+            onClick={() => opendModel("file", null, "bookTitle")}
+          >
+            <ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />
+            <span className="text-sm">Tải lên tựa sách</span>
+          </Button>
 
-          <ActionButton
-            icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Thể loại"
-            onClick={() => opendModel("category")}
-          />
+          <Button
+            variant="outline"
+            className="flex items-center space-x-2"
+            onClick={() => opendModel("file", null, "bookCopy")}
+          >
+            <ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />
+            <span className="text-sm">Tải lên bản sao</span>
+          </Button>
         </div>
 
         <Button
@@ -288,41 +281,40 @@ const BooksPage = () => {
           />
           <ActionButton
             icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Tải lên sách"
-            onClick={() => opendModel("file")}
+            label="Tải lên tựa sách"
+            onClick={() => opendModel("file", null, "bookTitle")}
           />
           <ActionButton
-            icon={<CubeIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Thể loại"
-            onClick={() => opendModel("category")}
+            icon={<ArrowUpOnSquareIcon className="h-4 w-4 text-[#0071BC]" />}
+            label="Tải lên bản sao"
+            onClick={() => opendModel("file", null, "bookCopy")}
           />
         </div>
       )}
 
-      {/* Modals */}
-      <CategoryModal
-        isOpen={isCategory}
-        categories={categories.filter((cat) => cat !== "Tất cả")}
-        onClose={closeModal}
-        onAdd={(newCat) => {
-          setCategories((prev) => [...prev, newCat]);
-          setRefreshTrigger((prev) => prev + 1);
-        }}
-        onDelete={(catToDelete) => {
-          setCategories((prev) => prev.filter((c) => c !== catToDelete));
-          setRefreshTrigger((prev) => prev + 1);
-        }}
+      {isFileOpend && uploadType && (
+        <FileUploadModal
+          isOpen={isFileOpend}
+          onClose={closeModal}
+          onSuccess={handleSuccess}
+          uploadUrl={
+            uploadType === "bookTitle"
+            ? "/api/book/uploadtitle"
+            : "/api/book/uploadcopy"
+          }
+        title={
+          uploadType === "bookTitle"
+            ? "Tải lên file tựa sách"
+            : "Tải lên file bản sao"
+        }
+        description={
+          uploadType === "bookTitle"
+            ? "Chọn file Excel chứa thông tin tựa sách để tải lên."
+            : "Chọn file Excel chứa thông tin bản sao sách để tải lên."
+        }
       />
-
-      <FileUploadModal
-        isOpen={isFileOpend}
-        onClose={closeModal}
-        onUpload={(file) => {
-          console.log("Đã chọn file:", file);
-          setRefreshTrigger((prev) => prev + 1);
-        }}
-      />
-
+      )}
+      
       <BookFormModal
         isOpen={isAddOpen || isEditOpen}
         isEdit={isEditOpen}
@@ -336,6 +328,7 @@ const BooksPage = () => {
           book={selectedBook}
           onClose={closeModal}
           onEdit={() => opendModel("edit", selectedBook)}
+          onSuccess={handleSuccess}
         />
       )}
 

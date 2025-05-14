@@ -17,9 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 
 const StaffPage = () => {
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,6 +29,8 @@ const StaffPage = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
 
   const [role, setRole] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -84,7 +88,16 @@ const StaffPage = () => {
     };
 
     fetchStaff();
-  }, []);
+  }, [refreshTrigger]);
+
+  const handleSuccess = () => {
+    setRefreshTrigger((prev) => prev + 1);
+    toast({
+      title: "Thành công",
+      description: "Dữ liệu đã được cập nhật thành công.",
+      variant: "success",
+    });
+  };
 
   const openModal = (mode: "add" | "detail" | "edit", staff?: any) => {
     if (mode === "add") {
@@ -184,6 +197,7 @@ const StaffPage = () => {
           setIsDetailOpen(false);
         }}
         onDelete={handleDelete}
+        onSuccess={handleSuccess}
       />
 
       <StaffFormModal
@@ -191,6 +205,7 @@ const StaffPage = () => {
         isEditOpen={isEditOpen}
         staffData={staffToEdit}
         closeAdd={closeModal}
+        onSuccess={handleSuccess}
       />
 
       <h1 className="mb-4 mt-6 text-2xl font-bold text-primary">

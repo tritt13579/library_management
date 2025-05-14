@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/solid";
 import Image from "next/image";
 import React from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReaderDetailModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface ReaderDetailModalProps {
   onCard: () => void;
   reader: any;
   onDeleted?: () => void;
+  onSuccess?: () => void;
 }
 
 const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
@@ -31,9 +33,10 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
   onCard,
   reader,
   onDeleted,
+  onSuccess
 }) => {
   if (!reader) return null;
-
+  const { toast } = useToast();
   const handleDelete = async () => {
     const confirmDelete = window.confirm(
       `Bạn có chắc chắn muốn xóa độc giả ${reader.last_name} ${reader.first_name}?`
@@ -53,9 +56,9 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
         throw new Error(data.error || "Xóa độc giả thất bại");
       }
 
-      alert("Đã xóa độc giả thành công.");
+      toast({ title: "Xóa độc giả thành công", variant: "success" });
+      onSuccess?.();
       onClose();
-      window.location.reload();
       if (onDeleted) onDeleted();
     } catch (error: any) {
       console.error("Lỗi khi xóa:", error);

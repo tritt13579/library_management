@@ -10,12 +10,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface StaffFormModalProps {
   isAddOpen: boolean;
   isEditOpen: boolean;
   closeAdd: () => void;
   staffData?: any;
+  onSuccess?: () => void;
 }
 
 interface Role {
@@ -28,7 +30,9 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   isEditOpen,
   closeAdd,
   staffData,
+  onSuccess
 }) => {
+  const { toast } = useToast();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dob, setDob] = useState("");
@@ -111,10 +115,12 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
     setLoading(false);
 
     if (res.ok) {
-      alert(isEditOpen ? "Cập nhật thành công" : "Thêm nhân viên thành công");
+      toast({ title: isEditOpen ? "Cập nhật thành công" : "Thêm nhân viên thành công", variant: "success" });
+      onSuccess?.();
       closeAdd();
+      resetForm();
     } else {
-      alert("Lỗi: " + result.error);
+      console.log("Lỗi: " + result.error);
     }
   };
 

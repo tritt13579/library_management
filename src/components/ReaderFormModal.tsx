@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ReaderFormModalProps {
@@ -19,6 +20,7 @@ interface ReaderFormModalProps {
   isEditOpen: boolean;
   closeCreate: () => void;
   reader?: any;
+  onSuccess?: () => void;
 }
 
 const ReaderFormModal = ({
@@ -26,7 +28,42 @@ const ReaderFormModal = ({
   isEditOpen,
   closeCreate,
   reader,
+  onSuccess
 }: ReaderFormModalProps) => {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [ageLimit, setAgeLimit] = useState<number>(16);
+
+  useEffect(() => {
+    const fetchAgeLimit = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase
+        .from("systemsetting")
+        .select("setting_value")
+        .eq("setting_id", 3)
+        .single();
+
+      if (!error && data) {
+        setAgeLimit(parseInt(data.setting_value, 10));
+      } else {
+        console.error("Không lấy được giá trị tuổi giới hạn:", error?.message);
+      }
+    };
+
+    fetchAgeLimit();
+  }, []);
+
+  const calculateAge = (dob: string): number => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -110,8 +147,17 @@ const ReaderFormModal = ({
   };
 
   const handleSubmit = async () => {
+    setIsSaving(true);
     const supabase = supabaseClient();
     let uploadedImageUrl = formData.photo_url;
+
+    const age = calculateAge(formData.date_of_birth);
+
+    if (age < ageLimit) {
+      toast({title: `Độc giả phải từ ${ageLimit} tuổi trở lên.`, variant: "destructive",});
+      setIsSaving(false);
+      return;
+    }
 
     if (imageFile) {
       const fileName = `avatars/readers/${Date.now()}_${imageFile.name}`;
@@ -121,6 +167,7 @@ const ReaderFormModal = ({
 
       if (error) {
         alert("Không thể tải ảnh lên.");
+        setIsSaving(false);
         return;
       }
 
@@ -142,13 +189,16 @@ const ReaderFormModal = ({
     try {
       const response = await axios.post("/api/reader/save", body);
       if (response.data.success) {
-        alert(isEditOpen ? "Cập nhật độc giả thành công!" : "Thêm độc giả thành công!");
+        toast({ title: isEditOpen ? "Cập nhật thành công" : "Thêm độc giả thành công", variant: "success" });
+        onSuccess?.();
+        setIsSaving(false);
         closeCreate();
       } else {
-        alert("Có lỗi xảy ra.");
+        console.log("Có lỗi xảy ra.");
       }
     } catch (err) {
-      alert("Lỗi khi gửi dữ liệu.");
+      console.log("Lỗi khi gửi dữ liệu.");
+      setIsSaving(false);
     }
   };
 
@@ -251,8 +301,8 @@ const ReaderFormModal = ({
           <Button variant="outline" onClick={closeCreate}>
             Hủy
           </Button>
-          <Button onClick={handleSubmit}>
-            {isEditOpen ? "Cập nhật" : "Lưu độc giả"}
+          <Button onClick={handleSubmit} disabled={isSaving}>
+            {isSaving ? "Đang lưu..." : isEditOpen ? "Cập nhật" : "Lưu độc giả"}
           </Button>
         </div>
       </DialogContent>
