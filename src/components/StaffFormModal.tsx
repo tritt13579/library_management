@@ -113,7 +113,6 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
     if (res.ok) {
       alert(isEditOpen ? "Cập nhật thành công" : "Thêm nhân viên thành công");
       closeAdd();
-      window.location.reload();
     } else {
       alert("Lỗi: " + result.error);
     }

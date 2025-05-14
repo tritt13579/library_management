@@ -144,7 +144,6 @@ const ReaderFormModal = ({
       if (response.data.success) {
         alert(isEditOpen ? "Cập nhật độc giả thành công!" : "Thêm độc giả thành công!");
         closeCreate();
-        window.location.reload();
       } else {
         alert("Có lỗi xảy ra.");
       }

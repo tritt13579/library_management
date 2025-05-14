@@ -48,7 +48,6 @@ const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
       }
 
       alert("Gia hạn thẻ thành công!");
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra");
     } finally {

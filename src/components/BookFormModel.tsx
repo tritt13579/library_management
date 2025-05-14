@@ -135,7 +135,6 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, isEdit, book, onC
       toast({ title: isEdit ? "Cập nhật thành công" : "Thêm sách thành công", variant: "success" });
       onSuccess?.();
       onClose();
-      window.location.reload();
     } catch (error) {
       toast({
         title: "Lỗi",
