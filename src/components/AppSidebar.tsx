@@ -81,7 +81,7 @@ const allItems: MenuItem[] = [
   },
   {
     title: "Setting",
-    url: "#", // Không cần link ở menu cha
+    url: "#",
     icon: Settings,
     requiredPermission: "Cài đặt",
     children: [
