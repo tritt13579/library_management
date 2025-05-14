@@ -96,7 +96,7 @@ const BookTitleDetail = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md md:max-w-4xl overflow-y-auto max-h-full md:max-h-[90vh] sm:max-w-xl">
+      <DialogContent className="max-w-md lg:max-w-4xl max-h-full md:max-h-[90vh] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Chi tiết sách</DialogTitle>
         </DialogHeader>
@@ -109,7 +109,7 @@ const BookTitleDetail = ({
             />
           ) : (
             <>
-              <div className="mb-2 w-full pr-2 lg:mb-0 lg:w-2/3 overflow-y-auto flex-grow">
+              <div className="mb-2 w-full pr-2 lg:mb-0 lg:w-2/3 overflow-y-auto max-h-[75vh]">
                 <h2 className="text-3xl font-semibold text-primary">{book.title}</h2>
                 <p className="mt-2 text-lg text-muted-foreground">
                   Tác giả: {book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
@@ -236,7 +236,7 @@ const BookTitleDetail = ({
                   </Button>
                 </div>
               </div>
-              <div className="w-full lg:w-1/2">
+              <div className="hidden lg:block w-full lg:w-1/2">
                 <img
                   src={book.cover_image || "/api/placeholder/400/600"}
                   alt={`Ảnh bìa ${book.title}`}
@@ -246,12 +246,6 @@ const BookTitleDetail = ({
             </>
           )}
         </div>
-
-        <DialogFooter className="mt-4">
-          <Button variant="secondary" onClick={onClose}>
-            Đóng
-          </Button>
-        </DialogFooter>
       </DialogContent>
 
       <BookCopyModal

@@ -5,10 +5,12 @@ const BookCopyDetail = ({
   bookTitle,
   bookCopy,
   onBack,
+  // onUpdateCondition,
 }: {
   bookTitle: any;
   bookCopy: any;
   onBack: () => void;
+  // onUpdateCondition: (bookCopy: any) => void;
 }) => {
   if (!bookCopy) return null;
 
@@ -41,7 +43,7 @@ const BookCopyDetail = ({
             </span>
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div className="flex flex-col gap-4 mt-4">
             <div className="rounded-md bg-accent p-4 text-accent-foreground">
               <h3 className="mb-3 text-lg font-medium text-primary">
                 Thông tin bản sao
@@ -64,6 +66,12 @@ const BookCopyDetail = ({
                   {bookCopy.price.toLocaleString("vi-VN")} VNĐ
                 </li>
               </ul>
+              <button
+                // onClick={() => onUpdateCondition(bookCopy)}
+                className="mt-2 rounded bg-primary px-4 py-1.5 text-white text-sm hover:bg-primary/90"
+              >
+                Cập nhật tình trạng
+              </button>
             </div>
 
             <div className="rounded-md border border-gray-200 p-4">
