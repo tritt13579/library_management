@@ -129,7 +129,7 @@ const ReadersPage = () => {
         <div className="hidden md:flex space-x-2">
           <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create') } />
           <Link href="/staff/queue"><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
-          <Link href="/staff/queue"><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
+          <Link href="/staff/notice"><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
         </div>
 
         <Button
@@ -146,7 +146,7 @@ const ReadersPage = () => {
         <div className="mt-4 flex flex-col space-y-4 md:hidden w-full">
           <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create')} />
           <Link href="/staff/queue" className='md:w-full'><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
-          <Link href="/staff/queue" className='md:w-full'><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
+          <Link href="/staff/notice" className='md:w-full'><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
         </div>
       )}
 
