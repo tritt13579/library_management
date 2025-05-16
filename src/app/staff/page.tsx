@@ -21,14 +21,13 @@ const StaffHomePage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const supabase = supabaseClient();
+  const fetchLoanTransactions = async () => {
+    try {
+      setLoading(true);
+      const supabase = supabaseClient();
 
-        const { data: bookAuthorsData, error: bookAuthorsError } =
-          await supabase.from("iswrittenby").select(`
+      const { data: bookAuthorsData, error: bookAuthorsError } =
+        await supabase.from("iswrittenby").select(`
             book_title_id,
             author_id,
             author:author_id (
@@ -37,30 +36,30 @@ const StaffHomePage = () => {
             )
           `);
 
-        if (bookAuthorsError) throw bookAuthorsError;
+      if (bookAuthorsError) throw bookAuthorsError;
 
-        const bookAuthorsMap = new Map<number, string>();
-        bookAuthorsData?.forEach((item: any) => {
-          const bookId = item.book_title_id;
-          const authorObj = Array.isArray(item.author)
-            ? item.author[0]
-            : item.author;
-          const authorName = authorObj?.author_name || "Unknown";
+      const bookAuthorsMap = new Map<number, string>();
+      bookAuthorsData?.forEach((item: any) => {
+        const bookId = item.book_title_id;
+        const authorObj = Array.isArray(item.author)
+          ? item.author[0]
+          : item.author;
+        const authorName = authorObj?.author_name || "Unknown";
 
-          if (bookAuthorsMap.has(bookId)) {
-            bookAuthorsMap.set(
-              bookId,
-              `${bookAuthorsMap.get(bookId)}, ${authorName}`,
-            );
-          } else {
-            bookAuthorsMap.set(bookId, authorName);
-          }
-        });
+        if (bookAuthorsMap.has(bookId)) {
+          bookAuthorsMap.set(
+            bookId,
+            `${bookAuthorsMap.get(bookId)}, ${authorName}`,
+          );
+        } else {
+          bookAuthorsMap.set(bookId, authorName);
+        }
+      });
 
-        const { data: loanData, error: loanError } = await supabase
-          .from("loantransaction")
-          .select(
-            `
+      const { data: loanData, error: loanError } = await supabase
+        .from("loantransaction")
+        .select(
+          `
             loan_transaction_id,
             transaction_date,
             due_date,
@@ -97,16 +96,15 @@ const StaffHomePage = () => {
               )
             )
           `,
-          )
-          .order("transaction_date", { ascending: false });
+        )
+        .order("transaction_date", { ascending: false });
 
-        if (loanError) throw loanError;
+      if (loanError) throw loanError;
 
-        const { data: reservationData, error: reservationError } =
-          await supabase
-            .from("reservation")
-            .select(
-              `
+      const { data: reservationData, error: reservationError } = await supabase
+        .from("reservation")
+        .select(
+          `
               reservation_id,
               reservation_date,
               expiration_date,
@@ -126,97 +124,102 @@ const StaffHomePage = () => {
                 )
               )
             `,
-            )
-            .order("reservation_date", { ascending: false });
+        )
+        .order("reservation_date", { ascending: false });
 
-        if (reservationError) throw reservationError;
+      if (reservationError) throw reservationError;
 
-        const formattedLoanTransactions =
-          loanData?.map((loan: any) => {
-            const books =
-              loan?.loandetail?.map((detail: any) => {
-                const bookTitleId = detail.bookcopy?.booktitle?.book_title_id;
-                return {
-                  id: detail.bookcopy?.copy_id,
-                  title: detail.bookcopy?.booktitle?.title || "Unknown Title",
-                  author: bookAuthorsMap.get(bookTitleId!) || "Unknown Author",
-                  condition:
-                    detail.bookcopy?.condition?.condition_name || "Unknown",
-                  returnDate: detail.return_date,
-                };
-              }) || [];
+      const formattedLoanTransactions =
+        loanData?.map((loan: any) => {
+          const books =
+            loan?.loandetail?.map((detail: any) => {
+              const bookTitleId = detail.bookcopy?.booktitle?.book_title_id;
+              return {
+                id: detail.bookcopy?.copy_id,
+                title: detail.bookcopy?.booktitle?.title || "Unknown Title",
+                author: bookAuthorsMap.get(bookTitleId!) || "Unknown Author",
+                condition:
+                  detail.bookcopy?.condition?.condition_name || "Unknown",
+                returnDate: detail.return_date,
+              };
+            }) || [];
 
-            const reader = Array.isArray(loan?.librarycard?.reader)
-              ? loan?.librarycard?.reader[0]
-              : loan?.librarycard?.reader;
+          const reader = Array.isArray(loan?.librarycard?.reader)
+            ? loan?.librarycard?.reader[0]
+            : loan?.librarycard?.reader;
 
-            const staff = Array.isArray(loan?.staff)
-              ? loan?.staff[0]
-              : loan?.staff;
+          const staff = Array.isArray(loan?.staff)
+            ? loan?.staff[0]
+            : loan?.staff;
 
-            return {
-              id: loan.loan_transaction_id,
-              reader: {
-                id: reader?.reader_id,
-                cardNumber: loan?.librarycard?.card_number || "Unknown",
-                name:
-                  `${reader?.first_name || ""} ${reader?.last_name || ""}`.trim() ||
-                  "Unknown",
-                email: reader?.email || "",
-              },
-              transactionDate: loan.transaction_date,
-              dueDate: loan.due_date,
-              status: loan.loan_status,
-              borrowType: loan.borrow_type || "Unknown",
-              books: books,
-              staffName:
-                `${staff?.first_name || ""} ${staff?.last_name || ""}`.trim() ||
+          return {
+            id: loan.loan_transaction_id,
+            reader: {
+              id: reader?.reader_id,
+              cardNumber: loan?.librarycard?.card_number || "Unknown",
+              name:
+                `${reader?.first_name || ""} ${reader?.last_name || ""}`.trim() ||
                 "Unknown",
-            };
-          }) || [];
+              email: reader?.email || "",
+            },
+            transactionDate: loan.transaction_date,
+            dueDate: loan.due_date,
+            status: loan.loan_status,
+            borrowType: loan.borrow_type || "Unknown",
+            books: books,
+            staffName:
+              `${staff?.first_name || ""} ${staff?.last_name || ""}`.trim() ||
+              "Unknown",
+          };
+        }) || [];
 
-        const formattedReservations =
-          reservationData?.map((reservation: any) => {
-            const reader = Array.isArray(reservation?.librarycard?.reader)
-              ? reservation?.librarycard?.reader[0]
-              : reservation?.librarycard?.reader;
+      const formattedReservations =
+        reservationData?.map((reservation: any) => {
+          const reader = Array.isArray(reservation?.librarycard?.reader)
+            ? reservation?.librarycard?.reader[0]
+            : reservation?.librarycard?.reader;
 
-            const bookTitle = Array.isArray(reservation?.booktitle)
-              ? reservation?.booktitle[0]
-              : reservation?.booktitle;
+          const bookTitle = Array.isArray(reservation?.booktitle)
+            ? reservation?.booktitle[0]
+            : reservation?.booktitle;
 
-            const bookTitleId = bookTitle?.book_title_id;
+          const bookTitleId = bookTitle?.book_title_id;
 
-            return {
-              id: reservation.reservation_id,
-              reader: {
-                id: reader?.reader_id,
-                cardNumber: reservation?.librarycard?.card_number || "Unknown",
-                name:
-                  `${reader?.first_name || ""} ${reader?.last_name || ""}`.trim() ||
-                  "Unknown",
-                email: reader?.email || "",
-              },
-              bookTitle: bookTitle?.title || "Unknown Title",
-              author: bookAuthorsMap.get(bookTitleId!) || "Unknown Author",
-              reservationDate: reservation.reservation_date,
-              expirationDate: reservation.expiration_date,
-              status: reservation.reservation_status,
-            };
-          }) || [];
+          return {
+            id: reservation.reservation_id,
+            reader: {
+              id: reader?.reader_id,
+              cardNumber: reservation?.librarycard?.card_number || "Unknown",
+              name:
+                `${reader?.first_name || ""} ${reader?.last_name || ""}`.trim() ||
+                "Unknown",
+              email: reader?.email || "",
+            },
+            bookTitle: bookTitle?.title || "Unknown Title",
+            author: bookAuthorsMap.get(bookTitleId!) || "Unknown Author",
+            reservationDate: reservation.reservation_date,
+            expirationDate: reservation.expiration_date,
+            status: reservation.reservation_status,
+          };
+        }) || [];
 
-        setLoanTransactions(formattedLoanTransactions);
-        setReservations(formattedReservations);
-      } catch (err: any) {
-        console.error("Error fetching data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setLoanTransactions(formattedLoanTransactions);
+      setReservations(formattedReservations);
+    } catch (err: any) {
+      console.error("Error fetching data:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchLoanTransactions();
   }, []);
+
+  const handleLoanCreated = () => {
+    fetchLoanTransactions();
+  };
 
   if (error) {
     return (
@@ -260,7 +263,10 @@ const StaffHomePage = () => {
 
           {/* Tab Quản lý mượn/trả */}
           <TabsContent value="loan-management">
-            <LoanManagementTab loanTransactions={loanTransactions} />
+            <LoanManagementTab
+              loanTransactions={loanTransactions}
+              onLoanCreated={handleLoanCreated}
+            />
           </TabsContent>
 
           {/* Tab Đặt trước sách */}

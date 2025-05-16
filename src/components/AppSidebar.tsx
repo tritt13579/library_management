@@ -105,16 +105,13 @@ export function AppSidebar() {
   const { permissions, loading } = usePermissions();
   const pathname = usePathname();
 
-  // State to track which parent menus are open
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
-  // Check if the current path is within a parent menu to auto-expand it
   const initialOpenState = useMemo(() => {
     const initialState: Record<string, boolean> = {};
 
     allItems.forEach((item) => {
       if (item.children) {
-        // Check if any child path matches current path
         const isActive = item.children.some((child) =>
           pathname.startsWith(child.url),
         );
@@ -127,7 +124,6 @@ export function AppSidebar() {
     return initialState;
   }, [pathname]);
 
-  // Set initial open state on component mount
   React.useEffect(() => {
     setOpenMenus(initialOpenState);
   }, [initialOpenState]);

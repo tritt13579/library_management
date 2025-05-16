@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import AddLoanDialog from "./AddLoanDialog";
 
-export const LoanManagementHeader = () => {
+interface LoanManagementHeaderProps {
+  onLoanCreated: () => void;
+}
+
+export const LoanManagementHeader = ({
+  onLoanCreated,
+}: LoanManagementHeaderProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   return (
@@ -30,6 +36,7 @@ export const LoanManagementHeader = () => {
         <AddLoanDialog
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
+          onLoanCreated={onLoanCreated}
         />
       </div>
     </CardHeader>

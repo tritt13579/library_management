@@ -37,7 +37,6 @@ import {
 import { supabaseClient } from "@/lib/client";
 import { toast } from "@/hooks/use-toast";
 
-// Định nghĩa các kiểu dữ liệu
 interface Role {
   role_id: number;
   role_name: string;
@@ -68,7 +67,6 @@ const RolePermissionManager = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
 
-  // Fetch data
   const fetchRoles = async () => {
     try {
       const supabase = supabaseClient();
@@ -146,7 +144,6 @@ const RolePermissionManager = () => {
     );
   };
 
-  // Event handlers
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
   };
@@ -204,7 +201,6 @@ const RolePermissionManager = () => {
 
       if (error) throw error;
 
-      // Update local state
       setRoles(
         roles.map((role) =>
           role.role_id === roleId ? { ...role, ...updatedData } : role,
@@ -229,7 +225,6 @@ const RolePermissionManager = () => {
   };
 
   const handleDeleteRole = async (roleId: number) => {
-    // Check if the role is being used by any staff
     try {
       const supabase = supabaseClient();
       const { data: staffWithRole, error: staffError } = await supabase
@@ -248,7 +243,6 @@ const RolePermissionManager = () => {
         return;
       }
 
-      // Delete all permissions for this role first
       const { error: deletePermError } = await supabase
         .from("haspermissions")
         .delete()
@@ -256,7 +250,6 @@ const RolePermissionManager = () => {
 
       if (deletePermError) throw deletePermError;
 
-      // Then delete the role
       const { error } = await supabase
         .from("role")
         .delete()
@@ -264,7 +257,6 @@ const RolePermissionManager = () => {
 
       if (error) throw error;
 
-      // Update local state
       setRoles(roles.filter((role) => role.role_id !== roleId));
       setRolePermissions(rolePermissions.filter((rp) => rp.role_id !== roleId));
 
@@ -295,7 +287,6 @@ const RolePermissionManager = () => {
       const supabase = supabaseClient();
 
       if (isChecked) {
-        // Add permission
         const { error } = await supabase
           .from("haspermissions")
           .insert([{ role_id: roleId, permission_id: permissionId }]);
@@ -307,7 +298,6 @@ const RolePermissionManager = () => {
           { role_id: roleId, permission_id: permissionId },
         ]);
       } else {
-        // Remove permission
         const { error } = await supabase
           .from("haspermissions")
           .delete()

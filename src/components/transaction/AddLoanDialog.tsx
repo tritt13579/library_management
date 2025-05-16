@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -28,21 +27,18 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { supabaseClient } from "@/lib/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LibraryCard {
   card_id: number;
   card_number: string;
+  card_status: string;
+  current_deposit_balance: number;
   reader: {
     first_name: string;
     last_name: string;
@@ -52,6 +48,7 @@ interface LibraryCard {
 interface BookCopy {
   copy_id: number;
   book_title_id: number;
+  price: number;
   booktitle: {
     title: string;
   };
@@ -60,112 +57,134 @@ interface BookCopy {
   };
 }
 
-interface Staff {
-  staff_id: number;
-  first_name: string;
-  last_name: string;
-}
-
 interface AddLoanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onLoanCreated: () => void;
 }
+
+const normalizeString = (str: string): string => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+};
 
 const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   open,
   onOpenChange,
+  onLoanCreated,
 }) => {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [cards, setCards] = useState<LibraryCard[]>([]);
   const [availableBooks, setAvailableBooks] = useState<BookCopy[]>([]);
   const [selectedBooks, setSelectedBooks] = useState<BookCopy[]>([]);
-  const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<BookCopy[]>([]);
+
+  const supabase = supabaseClient();
 
   const form = useForm({
     defaultValues: {
       card_id: "",
-      staff_id: "",
-      transaction_date: new Date(),
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // Default to 14 days from now
-      borrow_type: "standard", // Default borrow type
+      borrow_type: "Mượn về",
     },
   });
 
   useEffect(() => {
-    // Fetch data for dropdowns
     const fetchData = async () => {
       try {
-        // Fetch active library cards
-        const { data: cardData, error: cardError } = await supabaseClient()
+        const { data: cardData, error: cardError } = await supabase
           .from("librarycard")
           .select(
             `
             card_id,
             card_number,
+            card_status,
+            current_deposit_balance,
             reader:reader_id (
               first_name,
               last_name
             )
           `,
           )
-          .eq("card_status", "active");
+          .eq("card_status", "Hoạt động")
+          .order("card_id", { ascending: true });
 
-        if (cardError) throw cardError;
-        setCards(
-          (cardData || []).map((card: any) => ({
-            ...card,
-            reader: Array.isArray(card.reader) ? card.reader[0] : card.reader,
-          })),
-        );
+        if (cardError) {
+          console.error("Card fetch error:", cardError);
+          throw cardError;
+        }
 
-        // Fetch available books (not currently on loan)
-        const { data: bookData, error: bookError } = await supabaseClient()
-          .from("bookcopy")
+        const processedCards = cardData
+          ? cardData.map((card) => ({
+              ...card,
+              reader: Array.isArray(card.reader)
+                ? card.reader[0] || { first_name: "", last_name: "" }
+                : card.reader || { first_name: "", last_name: "" },
+            }))
+          : [];
+
+        setCards(processedCards);
+
+        const { data: loanedCopies, error: loanedError } = await supabase
+          .from("loandetail")
           .select(
             `
             copy_id,
+            loantransaction:loan_transaction_id (
+              loan_status
+            )
+          `,
+          )
+          .is("return_date", null)
+          .eq("loantransaction.loan_status", "Đang mượn");
+
+        if (loanedError) {
+          console.error("Loaned books fetch error:", loanedError);
+          throw loanedError;
+        }
+
+        const loanedCopyIds = loanedCopies
+          ? loanedCopies.map((item) => item.copy_id)
+          : [];
+
+        const { data: bookData, error: bookError } = await supabase.from(
+          "bookcopy",
+        ).select(`
+            copy_id,
             book_title_id,
+            price,
             booktitle:book_title_id (
               title
             ),
             condition:condition_id (
               condition_name
             )
-          `,
-          )
-          .not(
-            "copy_id",
-            "in",
-            `(
-            SELECT copy_id FROM loandetail
-            JOIN loantransaction ON loandetail.loan_transaction_id = loantransaction.loan_transaction_id
-            WHERE return_date IS NULL AND loan_status = 'active'
-          )`,
-          );
+          `);
 
-        if (bookError) throw bookError;
-        setAvailableBooks(
-          (bookData || []).map((book: any) => ({
-            ...book,
-            booktitle: Array.isArray(book.booktitle)
-              ? book.booktitle[0]
-              : book.booktitle,
-            condition: Array.isArray(book.condition)
-              ? book.condition[0]
-              : book.condition,
-          })),
-        );
+        if (bookError) {
+          console.error("Book fetch error:", bookError);
+          throw bookError;
+        }
 
-        // Fetch staff members
-        const { data: staffData, error: staffError } = await supabaseClient()
-          .from("staff")
-          .select("staff_id, first_name, last_name");
+        const availableBookCopies = bookData
+          ? bookData
+              .filter((book) => !loanedCopyIds.includes(book.copy_id))
+              .map((book) => ({
+                ...book,
+                booktitle: Array.isArray(book.booktitle)
+                  ? book.booktitle[0] || { title: "Không có tiêu đề" }
+                  : book.booktitle || { title: "Không có tiêu đề" },
+                condition: Array.isArray(book.condition)
+                  ? book.condition[0] || { condition_name: "Không xác định" }
+                  : book.condition || { condition_name: "Không xác định" },
+              }))
+          : [];
 
-        if (staffError) throw staffError;
-        setStaffMembers(staffData || []);
+        setAvailableBooks(availableBookCopies);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
@@ -182,18 +201,19 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   }, [open]);
 
   useEffect(() => {
-    // Filter books based on search term
     if (searchTerm.trim() === "") {
       setSearchResults([]);
       return;
     }
 
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    const filteredBooks = availableBooks.filter(
-      (book) =>
-        book.booktitle.title.toLowerCase().includes(lowerSearchTerm) &&
-        !selectedBooks.some((selected) => selected.copy_id === book.copy_id),
-    );
+    const normalizedSearchTerm = normalizeString(searchTerm.trim());
+    const filteredBooks = availableBooks.filter((book) => {
+      const normalizedTitle = normalizeString(book.booktitle.title);
+      return (
+        normalizedTitle.includes(normalizedSearchTerm) &&
+        !selectedBooks.some((selected) => selected.copy_id === book.copy_id)
+      );
+    });
     setSearchResults(filteredBooks);
   }, [searchTerm, availableBooks, selectedBooks]);
 
@@ -208,6 +228,15 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   };
 
   const onSubmit = async (values: any) => {
+    if (!user?.staff_id) {
+      toast({
+        title: "Lỗi",
+        description: "Không tìm thấy thông tin nhân viên.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (selectedBooks.length === 0) {
       toast({
         title: "Lỗi",
@@ -219,52 +248,46 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
 
     setLoading(true);
     try {
-      // Format dates
-      const transactionDate = format(values.transaction_date, "yyyy-MM-dd");
-      const dueDate = format(values.due_date, "yyyy-MM-dd");
+      const bookCopyIds = selectedBooks.map((book) => book.copy_id);
 
-      // First, create the loan transaction
-      const { data: transactionData, error: transactionError } =
-        await supabaseClient()
-          .from("loantransaction")
-          .insert({
-            card_id: parseInt(values.card_id),
-            staff_id: parseInt(values.staff_id),
-            transaction_date: transactionDate,
-            due_date: dueDate,
-            loan_status: "active",
-            borrow_type: values.borrow_type,
-          })
-          .select("loan_transaction_id")
-          .single();
-
-      if (transactionError) throw transactionError;
-
-      // Then, create loan details for each book
-      const loanDetailsPromises = selectedBooks.map((book) =>
-        supabaseClient().from("loandetail").insert({
-          copy_id: book.copy_id,
-          loan_transaction_id: transactionData.loan_transaction_id,
-          renewal_count: 0,
-          return_date: null,
-        }),
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/loan-transactions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cardId: parseInt(values.card_id),
+            staffId: user.staff_id,
+            bookCopies: bookCopyIds,
+            borrowType: values.borrow_type,
+          }),
+        },
       );
 
-      await Promise.all(loanDetailsPromises);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Lỗi không xác định khi tạo giao dịch mượn.",
+        );
+      }
 
       toast({
         title: "Thành công",
         description: "Đã tạo giao dịch mượn sách mới.",
       });
 
-      // Reset form and selected books
+      if (onLoanCreated) {
+        onLoanCreated();
+      }
+
       form.reset();
       setSelectedBooks([]);
 
-      // Close the dialog
       onOpenChange(false);
 
-      // Refresh the page to show the new loan
       router.refresh();
     } catch (error: any) {
       console.error("Error creating loan transaction:", error);
@@ -298,14 +321,14 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                 control={form.control}
                 name="card_id"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="col-span-2">
                     <FormLabel>Thẻ thư viện</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value.toString()}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="cursor-pointer hover:ring-2 hover:ring-primary/20 focus:ring-2">
                           <SelectValue placeholder="Chọn thẻ thư viện" />
                         </SelectTrigger>
                       </FormControl>
@@ -314,120 +337,15 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                           <SelectItem
                             key={card.card_id}
                             value={card.card_id.toString()}
+                            className="cursor-pointer transition-colors hover:bg-primary/10 data-[highlighted]:bg-primary/20 data-[selected]:bg-primary/20 data-[selected]:font-medium data-[selected]:text-primary"
                           >
                             {card.card_number} - {card.reader.first_name}{" "}
-                            {card.reader.last_name}
+                            {card.reader.last_name} - Số dư:{" "}
+                            {card.current_deposit_balance.toLocaleString()}đ
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Staff Selection */}
-              <FormField
-                control={form.control}
-                name="staff_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nhân viên</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn nhân viên" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {staffMembers.map((staff) => (
-                          <SelectItem
-                            key={staff.staff_id}
-                            value={staff.staff_id.toString()}
-                          >
-                            {staff.first_name} {staff.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Transaction Date */}
-              <FormField
-                control={form.control}
-                name="transaction_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Ngày mượn</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className="pl-3 text-left font-normal"
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>Chọn ngày</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Due Date */}
-              <FormField
-                control={form.control}
-                name="due_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Ngày hẹn trả</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className="pl-3 text-left font-normal"
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>Chọn ngày</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          disabled={(date) => date < new Date()}
-                        />
-                      </PopoverContent>
-                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -445,15 +363,23 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="cursor-pointer hover:ring-2 hover:ring-primary/20 focus:ring-2">
                           <SelectValue placeholder="Chọn loại mượn" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="standard">Tiêu chuẩn</SelectItem>
-                        <SelectItem value="short_term">Ngắn hạn</SelectItem>
-                        <SelectItem value="extended">Kéo dài</SelectItem>
-                        <SelectItem value="in_library">Đọc tại chỗ</SelectItem>
+                        <SelectItem
+                          value="Mượn về"
+                          className="cursor-pointer transition-colors hover:bg-primary/10 data-[highlighted]:bg-primary/20 data-[selected]:bg-primary/20 data-[selected]:font-medium data-[selected]:text-primary"
+                        >
+                          Mượn về
+                        </SelectItem>
+                        <SelectItem
+                          value="Đọc tại chỗ"
+                          className="cursor-pointer transition-colors hover:bg-primary/10 data-[highlighted]:bg-primary/20 data-[selected]:bg-primary/20 data-[selected]:font-medium data-[selected]:text-primary"
+                        >
+                          Đọc tại chỗ
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -485,7 +411,23 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                       onClick={() => handleAddBook(book)}
                     >
                       <span>
-                        {book.booktitle.title} ({book.condition.condition_name})
+                        <span className="font-medium">
+                          {book.booktitle.title}
+                        </span>{" "}
+                        -
+                        <span className="text-sm text-muted-foreground">
+                          {" "}
+                          Mã bản sao: {book.copy_id}
+                        </span>{" "}
+                        -
+                        <span className="text-sm">
+                          {" "}
+                          {book.condition.condition_name}
+                        </span>{" "}
+                        -
+                        <span className="text-sm font-semibold">
+                          Giá: {book.price.toLocaleString()}đ
+                        </span>
                       </span>
                       <Button
                         size="sm"
@@ -518,9 +460,17 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                       >
                         <div>
                           <p className="font-medium">{book.booktitle.title}</p>
-                          <Badge variant="outline">
-                            {book.condition.condition_name}
-                          </Badge>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline">
+                              Mã bản sao: {book.copy_id}
+                            </Badge>
+                            <Badge variant="outline">
+                              {book.condition.condition_name}
+                            </Badge>
+                            <Badge variant="outline">
+                              Giá: {book.price.toLocaleString()}đ
+                            </Badge>
+                          </div>
                         </div>
                         <Button
                           size="sm"
@@ -531,6 +481,15 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                         </Button>
                       </div>
                     ))}
+                    <div className="mt-2 text-right">
+                      <p className="text-sm font-medium">
+                        Tổng tiền đặt cọc:{" "}
+                        {selectedBooks
+                          .reduce((sum, book) => sum + book.price, 0)
+                          .toLocaleString()}
+                        đ
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

@@ -103,6 +103,7 @@ export interface FormattedReservation {
 
 export interface LoanManagementTabProps {
   loanTransactions: FormattedLoanTransaction[];
+  onLoanCreated: () => void;
 }
 
 export interface ReservationsTabProps {
