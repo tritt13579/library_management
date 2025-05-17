@@ -1,17 +1,30 @@
 "use client";
-import React from "react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   CreditCardIcon,
   PencilSquareIcon,
   TrashIcon,
 } from "@heroicons/react/24/solid";
+import Image from "next/image";
+import React, { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReaderDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit: () => void;
   onCard: () => void;
-  reader: any; 
+  reader: any;
+  onDeleted?: () => void;
+  onSuccess?: () => void;
 }
 
 const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
@@ -20,61 +33,156 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
   onEdit,
   onCard,
   reader,
+  onDeleted,
+  onSuccess,
 }) => {
-  if (!isOpen || !reader) return null;
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  if (!reader) return null;
+
+  const handleDeleteConfirmed = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/reader/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reader_id: reader.reader_id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({
+          title: data.error || "Xóa độc giả thất bại",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({ title: "Xóa độc giả thành công", variant: "success" });
+      onSuccess?.();
+      onClose();
+      onDeleted?.();
+    } catch (error: any) {
+      toast({
+        title: "Lỗi kết nối hoặc lỗi không xác định",
+        variant: "destructive",
+      });
+      console.error("Lỗi khi xóa:", error);
+    } finally {
+      setIsDeleting(false);
+      setConfirmOpen(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="flex max-h-[90vh] w-5/6 max-w-5xl flex-col overflow-y-auto rounded-lg bg-background p-8 lg:flex-row">
-        <div className="mb-4 w-full pr-4 lg:mb-0 lg:w-2/3">
-          <h2 className="text-3xl font-semibold text-primary">
-            {reader.last_name} {reader.first_name}
-          </h2>
-          <p className="mt-2 text-lg text-muted-foreground">ID: {reader.reader_id}</p>
-          <div className="mt-6 space-y-3 text-muted-foreground">
-            <p><strong className="text-primary">Ngày sinh:</strong> {reader.date_of_birth}</p>
-            <p><strong className="text-primary">Giới tính:</strong>{" "}{reader.gender === "M" ? "Nam" : "Nữ"}</p>
-            <p><strong className="text-primary">Email:</strong> {reader.email}</p>
-            <p><strong className="text-primary">SĐT:</strong> {reader.phone}</p>
-            <p><strong className="text-primary">Địa chỉ:</strong> {reader.address}</p>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md lg:max-w-4xl max-h-full md:max-h-[90vh] sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-primary">
+              {reader.last_name} {reader.first_name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-6 lg:flex-row">
+            {/* Left: Info */}
+            <div className="lg:w-2/3 space-y-3 text-base text-muted-foreground">
+              <p className="text-sm text-gray-400">ID: {reader.reader_id}</p>
+
+              <Info label="Ngày sinh" value={reader.date_of_birth} />
+              <Info
+                label="Giới tính"
+                value={reader.gender === "M" ? "Nam" : "Nữ"}
+              />
+              <Info label="Email" value={reader.email} />
+              <Info label="Số điện thoại" value={reader.phone} />
+              <Info label="Địa chỉ" value={reader.address} />
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button variant="outline" onClick={onClose}>
+                  Đóng
+                </Button>
+                <Button onClick={onCard} className="gap-2">
+                  <CreditCardIcon className="h-4 w-4" />
+                  Thẻ
+                </Button>
+                <Button onClick={onEdit} className="gap-2">
+                  <PencilSquareIcon className="h-4 w-4" />
+                  Sửa
+                </Button>
+                <Button
+                  onClick={() => setConfirmOpen(true)}
+                  variant="destructive"
+                  className="gap-2"
+                  disabled={isDeleting}
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  {isDeleting ? "Đang xóa..." : "Xóa"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Right: Avatar */}
+            <div className="hidden lg:block lg:w-1/3">
+              <div className="aspect-square overflow-hidden rounded-xl shadow-lg border border-gray-200">
+                <Image
+                  src={reader.photo_url || "/images/logo/avatar.jpg"}
+                  alt="Ảnh độc giả"
+                  width={400}
+                  height={400}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
           </div>
-          <div className="mt-6 flex space-x-3">
-            <button
-              onClick={onClose}
-              className="rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm delete dialog */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-sm p-6 space-y-4 rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg text-destructive">
+              Xác nhận xóa
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Bạn có chắc chắn muốn xóa độc giả{" "}
+            <span className="text-foreground font-semibold">
+              {reader.last_name} {reader.first_name}
+            </span>{" "}
+            không? Hành động này không thể hoàn tác.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isDeleting}
             >
-              Đóng
-            </button>
-            <button
-              onClick={onCard}
-              className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirmed}
+              disabled={isDeleting}
             >
-              <CreditCardIcon className="h-4 w-4" />
-              <span>Thẻ</span>
-            </button>
-            <button
-              onClick={onEdit}
-              className="flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-white hover:bg-[#005f9e]"
-            >
-              <PencilSquareIcon className="h-4 w-4" />
-              <span>Sửa</span>
-            </button>
-            <button className="flex items-center space-x-2 rounded-md bg-destructive px-4 py-2 text-white hover:bg-red-700">
-              <TrashIcon className="h-4 w-4" />
-              <span>Xóa</span>
-            </button>
-          </div>
-        </div>
-        <div className="w-full h-80 lg:w-1/2">
-          <img
-            src={reader.photo_url || "/images/logo/avatar.jpg"}
-            alt="Ảnh độc giả"
-            className="h-full w-full rounded-lg object-cover shadow-lg"
-          />
-        </div>
-      </div>
-    </div>
+              {isDeleting ? "Đang xóa..." : "Xác nhận xóa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
+
+const Info = ({ label, value }: { label: string; value: string }) => (
+  <p>
+    <span className="font-medium text-primary">{label}:</span>{" "}
+    <span className="text-foreground">{value}</span>
+  </p>
+);
 
 export default ReaderDetailModal;

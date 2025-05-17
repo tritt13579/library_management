@@ -2,36 +2,58 @@
 import React, { useState, useEffect } from "react";
 import {
   FolderPlusIcon,
-  MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { supabaseClient } from "@/lib/client";
 import StaffFormModal from "@/components/StaffFormModal";
 import StaffDetailModal from "@/components/StaffDetailModel";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
 
 const StaffPage = () => {
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
 
   const [role, setRole] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
+  const [staffToEdit, setStaffToEdit] = useState<any | null>(null);
 
   const staffPerPage = 10;
   const indexOfLast = currentPage * staffPerPage;
   const indexOfFirst = indexOfLast - staffPerPage;
 
-  const filteredStaff =
-    selectedCategory === "Tất cả"
-      ? staff
-      : staff.filter(
-          (s) => s.role?.role_id?.toString() === selectedCategory.toString()
-        );
+  const filteredStaff = staff.filter((s) => {
+    const matchesCategory =
+      selectedCategory === "Tất cả" ||
+      s.role?.role_id?.toString() === selectedCategory.toString();
+
+    const fullName = `${s.last_name} ${s.first_name}`.toLowerCase();
+    const search = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      s.staff_id.toString().includes(search) || fullName.includes(search);
+
+    return matchesCategory && matchesSearch;
+  });
 
   const currentStaff = filteredStaff.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredStaff.length / staffPerPage);
@@ -66,75 +88,102 @@ const StaffPage = () => {
     };
 
     fetchStaff();
-  }, []);
+  }, [refreshTrigger]);
 
-  const opendModel = (model: "add" | "detail" | "edit") => {
-    setIsAddOpen(model === "add");
-    setIsDetailOpen(model === "detail");
-    setIsEditOpen(model === "edit");
+  const handleSuccess = () => {
+    setRefreshTrigger((prev) => prev + 1);
+    toast({
+      title: "Thành công",
+      description: "Dữ liệu đã được cập nhật thành công.",
+      variant: "success",
+    });
+  };
+
+  const openModal = (mode: "add" | "detail" | "edit", staff?: any) => {
+    if (mode === "add") {
+      setIsAddOpen(true);
+      setStaffToEdit(null);
+    } else if (mode === "detail") {
+      setSelectedStaff(staff);
+      setIsDetailOpen(true);
+    } else if (mode === "edit") {
+      setStaffToEdit(staff);
+      setIsEditOpen(true);
+    }
   };
 
   const closeModal = () => {
-    setIsDetailOpen(false);
     setIsAddOpen(false);
+    setIsDetailOpen(false);
     setIsEditOpen(false);
+    setStaffToEdit(null);
+    setSelectedStaff(null);
+  };
+
+  const handleDelete = (deletedId: string) => {
+    setStaff((prev) => prev.filter((s) => s.staff_id !== deletedId));
+    closeModal();
   };
 
   return (
     <div className="p-6">
       {/* Bộ lọc + Tìm kiếm + Thêm */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            className="w-64 rounded-md border border-gray-300 bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="ID / Tên..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="min-w-[150px] flex-1 py-6"
           />
 
-          <select
+          <Select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
+            onValueChange={(value) => setSelectedCategory(value)}
           >
-            {role.map((rol, index) => (
-              <option key={index} value={rol.role_id?.toString()}>
-                {rol.role_name}
-              </option>
-            ))}
-          </select>
-
-          <button className="flex items-center justify-center rounded-md bg-primary px-4 py-3 text-white transition hover:bg-[#005f9e]">
-            <MagnifyingGlassIcon className="h-5 w-5 text-primary-foreground" />
-          </button>
+            <SelectTrigger className="min-w-[150px] flex-1 py-6">
+              <SelectValue placeholder="Chọn chức vụ" />
+            </SelectTrigger>
+            <SelectContent>
+              {role.map((rol, index) => (
+                <SelectItem key={index} value={rol.role_id?.toString()}>
+                  {rol.role_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="hidden space-x-2 md:flex">
-          <FilterButton
-            icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Thêm nhân viên"
-            onClick={() => opendModel("add")}
-          />
+          <Button
+            variant="outline"
+            onClick={() => openModal("add")}
+            className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
+          >
+            <FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />
+            <span className="text-sm">Thêm nhân viên</span>
+          </Button>
         </div>
 
-        <button
+        <Button
+          variant="outline"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-md border border-gray-300 p-2 text-[#0071BC] md:hidden"
+          className="md:hidden flex justify-start p-4"
         >
-          {isMobileMenuOpen ? (
-            <XMarkIcon className="h-5 w-5" />
+        {isMobileMenuOpen ? (
+          <XMarkIcon className="h-5 w-5" />
           ) : (
             <Bars3Icon className="h-5 w-5" />
           )}
-        </button>
+        </Button>
       </div>
 
-      {/* Menu mobile */}
       {isMobileMenuOpen && (
         <div className="mt-4 flex flex-col space-y-4 md:hidden">
           <FilterButton
             icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
             label="Thêm nhân viên"
-            onClick={() => opendModel("add")}
+            onClick={() => openModal("add")}
           />
         </div>
       )}
@@ -142,20 +191,23 @@ const StaffPage = () => {
       <StaffDetailModal
         isOpen={isDetailOpen}
         staff={selectedStaff}
-        onClose={closeModal}
-        onEdit={() => opendModel("edit")}
-        onDelete={() => {
-          // xử lý xóa
+        onClose={() => setIsDetailOpen(false)}
+        onEdit={(staff) => {
+          openModal("edit", staff);
+          setIsDetailOpen(false);
         }}
+        onDelete={handleDelete}
+        onSuccess={handleSuccess}
       />
 
       <StaffFormModal
         isAddOpen={isAddOpen}
         isEditOpen={isEditOpen}
+        staffData={staffToEdit}
         closeAdd={closeModal}
+        onSuccess={handleSuccess}
       />
 
-      {/* Danh sách nhân viên */}
       <h1 className="mb-4 mt-6 text-2xl font-bold text-primary">
         Danh sách nhân viên
       </h1>
@@ -201,10 +253,7 @@ const StaffPage = () => {
                 </td>
                 <td className="px-4 py-2 text-sm">{staff.email}</td>
                 <td
-                  onClick={() => {
-                    setSelectedStaff(staff);
-                    opendModel("detail");
-                  }}
+                  onClick={() => openModal("detail", staff)}
                   className="cursor-pointer px-4 py-2 text-sm text-[#0071BC] hover:underline"
                 >
                   Xem

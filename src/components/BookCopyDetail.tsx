@@ -1,123 +1,161 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import ConditionModal from "@/components/ConditionModel";
+import { supabaseClient } from "@/lib/client";
 
 const BookCopyDetail = ({
   bookTitle,
   bookCopy,
   onBack,
+  onSuccess,
+  onClose
 }: {
   bookTitle: any;
   bookCopy: any;
   onBack: () => void;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) => {
+  const [isConditionOpen, setIsConditionOpen] = useState(false);
+  const [conditions, setConditions] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [currentCopy, setCurrentCopy] = useState(bookCopy);
+
+  useEffect(() => {
+    const fetchConditions = async () => {
+      const supabase = supabaseClient();
+      const { data, error } = await supabase.from("condition").select("*");
+
+      if (error) {
+        console.error("Lỗi lấy tình trạng:", error);
+      } else {
+        setConditions(
+          data.map((item) => ({
+            id: item.condition_id.toString(),
+            name: item.condition_name,
+          }))
+        );
+      }
+    };
+
+    fetchConditions();
+  }, []);
+
   if (!bookCopy) return null;
+
   return (
-    <div className="w-full">
+    <div className="w-full px-4 py-2">
       <button
         onClick={onBack}
-        className="mb-4 flex items-center text-primary hover:text-blue-700"
+        className="mb-4 inline-flex items-center text-primary hover:text-blue-700"
       >
-        <ArrowLeftIcon className="mr-1 h-4 w-4" />
-        Quay lại thông tin sách
+        <ArrowLeftIcon className="mr-2 h-4 w-4" />
+        Quay lại
       </button>
 
-      <div className="flex flex-col lg:flex-row">
-        <div className="mb-6 w-full lg:mb-0 lg:w-2/3 lg:pr-6">
-          <h2 className="text-3xl font-semibold text-primary">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <img
+            src={bookTitle.cover_image || "/api/placeholder/300/450"}
+            alt={`Ảnh bìa ${bookTitle.title}`}
+            className="w-full rounded-md object-cover shadow-md"
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          <h2 className="text-2xl font-semibold text-primary mb-2">
             {bookTitle.title}{" "}
-            <span className="text-lg text-muted-foreground">
-              - Bản sao #{bookCopy.copy_id}
+            <span className="text-base text-muted-foreground">
+              - Bản sao #{currentCopy.copy_id}
             </span>
           </h2>
 
-          <div className="mt-6 space-y-3">
+          <div className="flex flex-col gap-4 mt-4">
             <div className="rounded-md bg-accent p-4 text-accent-foreground">
-              <h3 className="mb-2 text-lg font-medium text-primary">
+              <h3 className="mb-3 text-lg font-medium text-primary">
                 Thông tin bản sao
               </h3>
-              <div className="space-y-2 text-muted-foreground">
-                <p>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>
                   <strong className="text-primary">Mã bản sao:</strong>{" "}
-                  {bookCopy.copy_id}
-                </p>
-                <p>
+                  {currentCopy.copy_id}
+                </li>
+                <li>
                   <strong className="text-primary">Tình trạng:</strong>{" "}
-                  {bookCopy.condition?.condition_name || "Không rõ"}
-                </p>
-                <p>
+                  {currentCopy.condition?.condition_name || "Không rõ"}
+                </li>
+                <li>
                   <strong className="text-primary">Ngày nhập:</strong>{" "}
-                  {new Date(bookCopy.acquisition_date).toLocaleDateString(
-                    "vi-VN",
+                  {new Date(currentCopy.acquisition_date).toLocaleDateString(
+                    "vi-VN"
                   )}
-                </p>
-                <p>
+                </li>
+                <li>
                   <strong className="text-primary">Giá tiền:</strong>{" "}
-                  {bookCopy.price.toLocaleString("vi-VN")} VNĐ
-                </p>
-              </div>
+                  {currentCopy.price.toLocaleString("vi-VN")} VNĐ
+                </li>
+              </ul>
+              <button
+                className="mt-2 rounded bg-background px-4 py-1.5 text-primary text-sm"
+                onClick={() => setIsConditionOpen(true)}
+              >
+                Cập nhật tình trạng
+              </button>
             </div>
 
-            <div className="mt-4">
-              <h3 className="mb-2 text-lg font-medium text-primary">
-                Lịch sử mượn trả
+            <div className="rounded-md border border-gray-200 p-4">
+              <h3 className="mb-3 text-lg font-medium text-primary">
+                Thông tin sách
               </h3>
-              <div className="rounded-md border p-4">
-                <p className="text-center text-sm italic text-muted-foreground">
-                  Chưa có thông tin mượn trả
-                </p>
-                {/* In a real app, you would map through the borrowing history here */}
-              </div>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-primary">Tác giả:</strong>{" "}
+                  {bookTitle.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
+                </li>
+                <li>
+                  <strong className="text-primary">Thể loại:</strong>{" "}
+                  {bookTitle.category?.category_name ?? "Không rõ"}
+                </li>
+                <li>
+                  <strong className="text-primary">Nhà xuất bản:</strong>{" "}
+                  {bookTitle.publisher?.publisher_name ?? "Không rõ"}
+                </li>
+                <li>
+                  <strong className="text-primary">Vị trí:</strong>{" "}
+                  {bookTitle.shelf?.location ?? "N/A"}
+                </li>
+                <li>
+                  <strong className="text-primary">ISBN:</strong>{" "}
+                  {bookTitle.isbn ?? "N/A"}
+                </li>
+              </ul>
             </div>
-
-            <div className="mt-4">
-              <h3 className="mb-2 text-lg font-medium text-primary">Ghi chú</h3>
-              <div className="rounded-md border p-4">
-                <p className="text-sm text-muted-foreground">
-                  Không có ghi chú cho bản sao này
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full lg:w-1/3">
-          <div className="rounded-md border border-gray-200 p-4">
-            <h3 className="mb-3 text-lg font-medium text-primary">
-              Thông tin sách
-            </h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                <strong className="text-primary">Tác giả:</strong>{" "}
-                {bookTitle.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
-              </p>
-              <p>
-                <strong className="text-primary">Thể loại:</strong>{" "}
-                {bookTitle.category?.category_name ?? "Không rõ"}
-              </p>
-              <p>
-                <strong className="text-primary">Nhà xuất bản:</strong>{" "}
-                {bookTitle.publisher?.publisher_name ?? "Không rõ"}
-              </p>
-              <p>
-                <strong className="text-primary">Vị trí:</strong>{" "}
-                {bookTitle.shelf?.location ?? "N/A"}
-              </p>
-              <p>
-                <strong className="text-primary">ISBN:</strong>{" "}
-                {bookTitle.isbn ?? "N/A"}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <img
-              src={bookTitle.cover_image || "/api/placeholder/300/450"}
-              alt={`Ảnh bìa ${bookTitle.title}`}
-              className="w-full rounded-lg object-cover shadow-lg"
-            />
           </div>
         </div>
       </div>
+
+      <ConditionModal
+        isOpen={isConditionOpen}
+        onClose={() => setIsConditionOpen(false)}
+        currentConditionId={currentCopy.condition?.condition_id?.toString()}
+        conditions={conditions}
+        copyId={currentCopy.copy_id}
+        onSuccess={(updatedCondition) => {
+          setIsConditionOpen(false); 
+          if (updatedCondition) {
+            setCurrentCopy((prev: typeof bookCopy) => ({
+              ...prev,
+              condition: updatedCondition,
+            }));
+          }
+          onSuccess?.(); 
+          onBack();
+          onClose?.();
+        }}
+      />
     </div>
   );
 };
