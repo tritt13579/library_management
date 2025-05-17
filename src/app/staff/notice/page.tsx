@@ -55,10 +55,7 @@ export default function NoticePage() {
   const today = new Date();
   const [selectedBorrower, setSelectedBorrower] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
-  const [selectedNotifyStatus, setSelectedNotifyStatus] = useState('');
-  const [selectedDueStatus, setSelectedDueStatus] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  
   const [loan, setLoan] = useState<any[]>([]);
 
   useEffect(() => {
@@ -87,7 +84,7 @@ export default function NoticePage() {
     l.loandetail.map((detail: any) => ({
       id: detail.bookcopy.copy_id,
       title: detail.bookcopy.booktitle.title,
-      coverUrl: detail.bookcopy.booktitle.cover_url,
+      coverUrl: detail.bookcopy.booktitle.cover_image,
       borrowedAt: l.transaction_date,
       dueAt: l.due_date,
       returnAt: detail.return_date,
@@ -102,6 +99,21 @@ export default function NoticePage() {
     }))
   );
 
+  const overdueBooks = borrowedBooks.filter(
+    (book) => new Date(book.dueAt) < today && book.status !== 'Đã trả'
+  );
+
+  const filteredOverdues = overdueBooks.filter((book) =>
+    book.title.toLowerCase().includes(searchText.toLowerCase()) ||
+    book.borrower.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  const groupedOverdues = overdueBooks.reduce((acc: any, book) => {
+    if (!acc[book.borrower]) acc[book.borrower] = [];
+    acc[book.borrower].push(book);
+    return acc;
+  }, {});
+
   const handleSuccess = () => {
     setRefreshTrigger((prev) => prev + 1);
     toast({
@@ -111,36 +123,10 @@ export default function NoticePage() {
     });
   };
 
-  const overdueBooks = borrowedBooks.filter(
-    (book) => new Date(book.dueAt) < today && book.status !== 'Đã trả'
-  );
-
-  const groupedOverdues = overdueBooks.reduce((acc: any, book) => {
-    if (!acc[book.borrower]) acc[book.borrower] = [];
-    acc[book.borrower].push(book);
-    return acc;
-  }, {});
-
-  const filteredBooks = borrowedBooks.filter((book) => {
-    if (book.status === 'Đã trả') return false;
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchText.toLowerCase()) ||
-      book.borrower.toLowerCase().includes(searchText.toLowerCase());
-    const matchesNotify =
-      !selectedNotifyStatus || book.notifyStatus === selectedNotifyStatus;
-    const isOverdue = new Date(book.dueAt) < today && book.status !== 'Đã trả';
-    const matchesDue =
-      !selectedDueStatus ||
-      (selectedDueStatus === 'onTime' && book.status === 'Đã trả') ||
-      (selectedDueStatus === 'overdue' && isOverdue);
-    return matchesSearch && matchesNotify && matchesDue;
-  });
-
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold">Chậm trả</h1>
 
-      {/* Filter Section */}
       <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
           <Input
@@ -153,18 +139,16 @@ export default function NoticePage() {
         </div>
       </div>
 
-      {filteredBooks.map((book, index) => {
+      {filteredOverdues.map((book, index) => {
         const borrowedDate = new Date(book.borrowedAt);
         const dueDate = new Date(book.dueAt);
-        const isOverdue = dueDate < today && book.status !== 'Đã trả';
         const daysBorrowed = Math.floor((today.getTime() - borrowedDate.getTime()) / (1000 * 60 * 60 * 24));
-        const borderColor = isOverdue ? 'border-red-300' : 'border-gray-200';
 
         return (
           <div
             key={index}
-            onClick={() => isOverdue && setSelectedBorrower(book.borrower)}
-            className={`mt-6 mb-6 space-y-4 cursor-pointer flex items-start space-x-4 rounded-lg border p-4 shadow-sm bg-background ${borderColor}`}
+            onClick={() => setSelectedBorrower(book.borrower)}
+            className="mt-6 mb-6 space-y-4 cursor-pointer flex items-start space-x-4 rounded-lg border p-4 shadow-sm bg-background border-red-300"
           >
             <img src={book.coverUrl} alt={book.title} className="w-20 h-28 object-cover rounded" />
             <div className="flex-1 space-y-1">
@@ -172,9 +156,7 @@ export default function NoticePage() {
               <div className="text-sm text-gray-600">Người mượn: {book.borrower}</div>
               <div className="text-sm">Ngày mượn: {borrowedDate.toLocaleString()}</div>
               <div className="text-sm">Số ngày đã mượn: {daysBorrowed} ngày</div>
-              <div className={`text-sm ${isOverdue ? 'text-red-500' : ''}`}>
-                Trạng thái: {book.status}
-              </div>
+              <div className="text-sm text-red-500">Trạng thái: {book.status}</div>
             </div>
           </div>
         );
