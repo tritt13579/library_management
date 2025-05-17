@@ -37,6 +37,7 @@ const UserDropdown = () => {
             setUser({
               full_name: userObj.user_metadata.full_name,
               role: userObj.user_metadata?.role || null,
+              staff_id: userObj.user_metadata?.staff_id || null,
             });
           }
         } catch (error) {

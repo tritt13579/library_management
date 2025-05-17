@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 type User = {
   full_name: string | null;
   role: "reader" | "staff" | null;
+  staff_id?: number | null; // Thêm staff_id vào kiểu User
 };
 
 type AuthContextType = {
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser({
             full_name: userObj.user_metadata?.full_name || null,
             role: userObj.user_metadata?.role || null,
+            staff_id: userObj.user_metadata?.staff_id || null,
           });
         }
       } catch (error) {
@@ -35,7 +37,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     };
-
     fetchUser();
   }, []);
 

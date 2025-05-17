@@ -17,7 +17,7 @@ const BookCard: React.FC<BookCardProps> = ({
   return (
     <Link href="">
       <div className="flex h-[400px] w-full cursor-pointer flex-col rounded-xl bg-white shadow transition hover:shadow-lg">
-        <div className="h-64 w-full overflow-hidden rounded-t-xl">
+        <div className="h-72 w-full overflow-hidden rounded-t-xl">
           <img src={image} alt={title} className="h-full w-full object-cover" />
         </div>
         <div className="flex flex-grow flex-col p-4">

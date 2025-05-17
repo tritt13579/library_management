@@ -15,7 +15,7 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   "/staff/books": "Quản lí sách",
   "/staff/reports": "Báo cáo thống kê",
   "/staff/payments": "Quản lí thanh toán",
-  "/staff/settings": "Cài đặt",
+  "/staff/setting": "Cài đặt",
 };
 
 export default function StaffLayout({
