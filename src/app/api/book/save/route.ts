@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       !language
     ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Thiếu trường bắt buộc" },
         { status: 400 },
       );
     }
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       if (uploadError) {
         console.error("Error uploading image:", uploadError);
         return NextResponse.json(
-          { error: "Image upload failed" },
+          { error: "Tải ảnh lỗi" },
           { status: 500 },
         );
       }
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
 
         if (insertAuthorsError) {
           console.error("Error inserting authors:", insertAuthorsError);
-          console.warn("Failed to link authors to book");
+          console.warn("Lỗi liên kết");
         }
       }
     }

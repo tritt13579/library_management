@@ -2,6 +2,17 @@ import { createClient } from "@/auth/server";
 import { supabaseAdmin } from "@/lib/admin";
 import { NextRequest, NextResponse } from "next/server";
 
+function calculateAge(dob: string): number {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -28,7 +39,15 @@ export async function POST(req: NextRequest) {
     !hire_date
   ) {
     return NextResponse.json(
-      { error: "Missing required fields" },
+      { error: "Thiếu trường bắt buộc" },
+      { status: 400 },
+    );
+  }
+
+  const age = calculateAge(date_of_birth);
+  if (age < 18) {
+    return NextResponse.json(
+      { error: "Tuổi không hợp lệ. Nhân viên phải từ 18 tuổi trở lên." },
       { status: 400 },
     );
   }
@@ -65,7 +84,7 @@ export async function POST(req: NextRequest) {
     if (createError || !createdUser?.user?.id) {
       console.error(createError);
       return NextResponse.json(
-        { error: "User creation failed" },
+        { error: "Tạo người dùng lỗi" },
         { status: 500 },
       );
     }
@@ -87,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     if (insertError) {
       console.error(insertError);
-      return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+      return NextResponse.json({ error: "Lỗi thêm nhân viên" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
@@ -110,7 +129,7 @@ export async function POST(req: NextRequest) {
 
   if (updateError) {
     console.error(updateError);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return NextResponse.json({ error: "Cập nhật lỗi" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

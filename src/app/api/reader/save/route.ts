@@ -19,13 +19,14 @@ export async function POST(req: NextRequest) {
     photo_url,
   } = body;
 
+  console.log("Dữ liệu nhận được từ client:", body);
+
   if (
     !email ||
     !first_name ||
     !last_name ||
     !date_of_birth ||
     !gender ||
-    !deposit_package_id ||
     !card_type
   ) {
     return NextResponse.json(
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (readerId) {
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateReaderError } = await supabaseAdmin
       .from("reader")
       .update({
         first_name,
@@ -45,13 +46,31 @@ export async function POST(req: NextRequest) {
         address,
         phone,
         email,
+        photo_url, 
       })
       .eq("reader_id", readerId);
 
-    if (updateError) {
-      console.error(updateError);
+    if (updateReaderError) {
+      console.error("Lỗi cập nhật thông tin độc giả:", updateReaderError);
       return NextResponse.json(
-        { error: "Cập nhật reader thất bại" },
+        { error: "Cập nhật thông tin độc giả thất bại" },
+        { status: 500 },
+      );
+    }
+
+    // Cập nhật thông tin thẻ thư viện
+    const { error: updateCardError } = await supabaseAdmin
+      .from("librarycard")
+      .update({
+        deposit_package_id,
+        card_type,
+      })
+      .eq("reader_id", readerId);
+
+    if (updateCardError) {
+      console.error("Lỗi cập nhật thông tin thẻ thư viện:", updateCardError);
+      return NextResponse.json(
+        { error: "Cập nhật thông tin thẻ thư viện thất bại" },
         { status: 500 },
       );
     }
@@ -73,9 +92,9 @@ export async function POST(req: NextRequest) {
   });
 
   if (authError || !createdUser?.user?.id) {
-    console.error(authError);
+    console.error("Lỗi tạo tài khoản người dùng:", JSON.stringify(authError, null, 2));
     return NextResponse.json(
-      { error: "Tạo tài khoản thất bại" },
+      { error: "Tạo tài khoản người dùng thất bại" },
       { status: 500 },
     );
   }
@@ -98,9 +117,9 @@ export async function POST(req: NextRequest) {
     .select("reader_id");
 
   if (insertReaderError || !readerData || readerData.length === 0) {
-    console.error(insertReaderError);
+    console.error("Lỗi thêm thông tin độc giả:", insertReaderError);
     return NextResponse.json(
-      { error: "Thêm reader thất bại" },
+      { error: "Thêm thông tin độc giả thất bại" },
       { status: 500 },
     );
   }
@@ -110,11 +129,11 @@ export async function POST(req: NextRequest) {
   const { data: settingData, error: settingError } = await supabaseAdmin
     .from("systemsetting")
     .select("setting_value")
-    .eq("setting_name", "Thời hạn thẻ")
+    .eq("setting_id", 11)
     .single();
 
   if (settingError || !settingData) {
-    console.error(settingError);
+    console.error("Lỗi lấy thời hạn thẻ:", settingError);
     return NextResponse.json(
       { error: "Không lấy được thời hạn thẻ" },
       { status: 500 },
@@ -136,9 +155,9 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (packageError || !packageData) {
-      console.error(packageError);
+      console.error("Lỗi lấy thông tin gói đặt cọc:", packageError);
       return NextResponse.json(
-        { error: "Không lấy được gói đặt cọc" },
+        { error: "Không lấy được thông tin gói đặt cọc" },
         { status: 500 },
       );
     }
@@ -163,7 +182,7 @@ export async function POST(req: NextRequest) {
   ]);
 
   if (cardError) {
-    console.error(cardError);
+    console.error("Lỗi tạo thẻ thư viện:", cardError);
     return NextResponse.json(
       { error: "Tạo thẻ thư viện thất bại" },
       { status: 500 },

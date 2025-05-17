@@ -1,72 +1,137 @@
 "use client";
+
 import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { CalendarDaysIcon } from "@heroicons/react/24/solid";
+import Image from "next/image";
 
 interface CardDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExtend: () => void;
+  onExtend: (reader: any) => void;
+  extendMonths: number;
   reader: any;
 }
 
-const CardDetailModal = ({ isOpen, onClose, onExtend, reader }: CardDetailModalProps) => {
-  if (!isOpen || !reader) return null;
+const CardDetailModal = ({
+  isOpen,
+  onClose,
+  onExtend,
+  extendMonths,
+  reader,
+}: CardDetailModalProps) => {
+  if (!reader) return null;
 
   const card = reader.librarycard?.[0];
   const deposit = card?.depositpackage;
 
+  const now = new Date();
+  const expiryDate = card?.expiry_date ? new Date(card.expiry_date) : null;
+
+  const isExpired = expiryDate && expiryDate < now;
+
+  let isCanceled = false;
+
+  if (expiryDate) {
+    const extendedDate = new Date(expiryDate);
+    extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
+    isCanceled = now > extendedDate;
+  }
+
+  const getCardStatus = () => {
+    if (isCanceled) return { text: "Đã hủy", className: "text-gray-500 font-semibold" };
+    if (isExpired) return { text: "Chưa gia hạn", className: "text-red-600 font-semibold" };
+    return { text: "Hoạt động", className: "text-green-600 font-semibold" };
+  };
+
+  const status = getCardStatus();
+
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="flex max-h-[90vh] w-5/6 max-w-xl flex-col overflow-y-auto rounded-lg bg-background p-6">
-        {/* Thẻ thư viện */}
-        <div className="relative w-full rounded-xl border bg-background p-5 shadow-lg">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md lg:max-w-xl max-h-full md:max-h-[90vh] sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-primary">
+            Thẻ Thư Viện
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Card Info Section */}
+        <div className="w-full rounded-xl border bg-background p-5 shadow-sm">
           <div className="flex items-start gap-6">
+            {/* Image */}
             <div className="flex-shrink-0">
-              <img
+              <Image
                 src={reader.photo_url || "/images/logo/avatar.jpg"}
                 alt="Ảnh thẻ"
-                className="h-36 w-24 rounded-md border object-cover shadow"
+                width={96}
+                height={144}
+                className="rounded-md border object-cover shadow w-24 h-36"
               />
             </div>
-            <div className="flex flex-col justify-start space-y-1 text-sm text-muted-foreground">
-              <p className="mb-2 text-base font-semibold text-primary">THẺ THƯ VIỆN</p>
-              <p><strong className="text-gray-700">ID Thẻ:</strong> {card?.card_id || "Chưa có"}</p>
-              <p><strong className="text-gray-700">Loại thẻ:</strong> {card?.card_type || "Không rõ"}</p>
-              <p><strong className="text-gray-700">Hạn mức:</strong> {deposit?.package_amount || 0} VND</p>
-              <p><strong className="text-gray-700">Số thẻ:</strong> {card?.card_number || "N/A"}</p>
-              <p><strong className="text-gray-700">Ngày tạo:</strong> {card?.issue_date?.slice(0, 10) || "N/A"}</p>
-              <p><strong className="text-gray-700">Ngày hết hạn:</strong> {card?.expiry_date?.slice(0, 10) || "N/A"}</p>
+
+            {/* Info */}
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p className="mb-2 text-base font-semibold text-primary">
+                THẺ THƯ VIỆN
+              </p>
+              <p>
+                <strong className="text-gray-700">ID Thẻ:</strong>{" "}
+                {card?.card_id || "Chưa có"}
+              </p>
+              <p>
+                <strong className="text-gray-700">Loại thẻ:</strong>{" "}
+                {card?.card_type || "Không rõ"}
+              </p>
+              <p>
+                <strong className="text-gray-700">Hạn mức:</strong>{" "}
+                {deposit?.package_amount || 0} VND
+              </p>
+              <p>
+                <strong className="text-gray-700">Số thẻ:</strong>{" "}
+                {card?.card_number || "N/A"}
+              </p>
+              <p>
+                <strong className="text-gray-700">Ngày tạo:</strong>{" "}
+                {card?.issue_date?.slice(0, 10) || "N/A"}
+              </p>
+              <p>
+                <strong className="text-gray-700">Ngày hết hạn:</strong>{" "}
+                {card?.expiry_date?.slice(0, 10) || "N/A"}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 w-full rounded-md border bg-background p-4 text-sm shadow-sm">
+        {/* Status Section */}
+        <div className="w-full rounded-md border bg-background p-4 text-sm shadow-sm">
           <p className="text-gray-700">
             <strong className="text-primary">Trạng thái thẻ:</strong>{" "}
-            {card?.expiry_date && new Date(card.expiry_date) >= new Date() ? "Còn hạn" : "Chưa gia hạn"}
+            <span className={status.className}>{status.text}</span>
           </p>
           <p className="text-gray-700">
-            <strong className="text-primary">ID giao dịch:</strong> {card?.payment_id || "N/A"}
+            <strong className="text-primary">ID giao dịch:</strong>{" "}
+            {card?.payment_id || "N/A"}
           </p>
         </div>
 
-        <div className="mt-6 flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
-          >
+        {/* Actions */}
+        <div className="mt-4 flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose}>
             Đóng
-          </button>
-          <button
-            onClick={onExtend}
-            className="flex min-h-[44px] items-center space-x-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-[#005f9e]"
-          >
-            <CalendarDaysIcon className="h-5 w-5" />
-            <span>Gia hạn</span>
-          </button>
+          </Button>
+          <Button onClick={() => onExtend(reader)} className="gap-2">
+            <CalendarDaysIcon className="h-4 w-4" />
+            Gia hạn
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

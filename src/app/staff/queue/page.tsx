@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { supabaseClient } from "@/lib/client";
+import { Input } from "@/components/ui/input";
 
 interface Author {
   author_name: string;
@@ -117,10 +118,10 @@ export default function QueuePage() {
       <h1 className="text-2xl font-bold mb-4">Hàng đợi đặt sách</h1>
 
       <div className="mb-4">
-        <input
+        <Input
           type="text"
           placeholder="Tìm theo tên sách hoặc mã thẻ"
-          className="w-full md:w-1/2 border rounded-md px-4 py-2"
+          className="w-full h-12 md:w-1/2"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
