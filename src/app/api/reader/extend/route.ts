@@ -14,13 +14,14 @@ export async function POST(req: NextRequest) {
     .from("librarycard")
     .select("expiry_date")
     .eq("reader_id", readerId)
-    .eq("card_status", "Hoạt động")
+    .in("card_status", ["Hoạt động", "Chưa gia hạn"])
     .single();
 
   if (cardFetchError || !cardData) {
     console.error(cardFetchError);
+    console.log("Gia hạn thẻ cho readerId:", readerId);
     return NextResponse.json(
-      { error: "Không tìm thấy thẻ thư viện hợp lệ" },
+      { error: "Không thể gia hạn" },
       { status: 404 },
     );
   }
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     .from("librarycard")
     .update({ expiry_date: newExpiryDate.toISOString().split("T")[0] })
     .eq("reader_id", readerId)
-    .eq("card_status", "Hoạt động");
+    .in("card_status", ["Hoạt động", "Chưa gia hạn"]);
 
   if (updateError) {
     console.error(updateError);

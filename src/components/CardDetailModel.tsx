@@ -15,6 +15,7 @@ interface CardDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExtend: (reader: any) => void;
+  extendMonths: number;
   reader: any;
 }
 
@@ -22,6 +23,7 @@ const CardDetailModal = ({
   isOpen,
   onClose,
   onExtend,
+  extendMonths,
   reader,
 }: CardDetailModalProps) => {
   if (!reader) return null;
@@ -29,12 +31,30 @@ const CardDetailModal = ({
   const card = reader.librarycard?.[0];
   const deposit = card?.depositpackage;
 
-  const isExpired =
-    card?.expiry_date && new Date(card.expiry_date) < new Date();
+  const now = new Date();
+  const expiryDate = card?.expiry_date ? new Date(card.expiry_date) : null;
+
+  const isExpired = expiryDate && expiryDate < now;
+
+  let isCanceled = false;
+
+  if (expiryDate) {
+    const extendedDate = new Date(expiryDate);
+    extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
+    isCanceled = now > extendedDate;
+  }
+
+  const getCardStatus = () => {
+    if (isCanceled) return { text: "Đã hủy", className: "text-gray-500 font-semibold" };
+    if (isExpired) return { text: "Chưa gia hạn", className: "text-red-600 font-semibold" };
+    return { text: "Hoạt động", className: "text-green-600 font-semibold" };
+  };
+
+  const status = getCardStatus();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-md lg:max-w-xl max-h-full md:max-h-[90vh] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-primary">
             Thẻ Thư Viện
@@ -92,7 +112,7 @@ const CardDetailModal = ({
         <div className="w-full rounded-md border bg-background p-4 text-sm shadow-sm">
           <p className="text-gray-700">
             <strong className="text-primary">Trạng thái thẻ:</strong>{" "}
-            {isExpired ? "Chưa gia hạn" : "Còn hạn"}
+            <span className={status.className}>{status.text}</span>
           </p>
           <p className="text-gray-700">
             <strong className="text-primary">ID giao dịch:</strong>{" "}

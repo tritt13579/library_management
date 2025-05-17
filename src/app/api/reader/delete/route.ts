@@ -6,47 +6,65 @@ export async function POST(req: NextRequest) {
   const { reader_id } = body;
 
   if (!reader_id) {
-    return NextResponse.json(
-      { error: "Thiếu reader_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Thiếu reader_id" }, { status: 400 });
   }
 
   try {
-    // 1. Xóa thẻ thư viện của độc giả (nếu có)
-    const { error: cardDeleteError } = await supabaseAdmin
+    // 1. Lấy thẻ thư viện
+    const { data: card, error: cardError } = await supabaseAdmin
       .from("librarycard")
-      .delete()
-      .eq("reader_id", reader_id);
+      .select("card_id")
+      .eq("reader_id", reader_id)
+      .single();
 
-    if (cardDeleteError) {
-      console.error("Lỗi xóa thẻ thư viện:", cardDeleteError);
-      return NextResponse.json(
-        { error: "Không thể xóa thẻ thư viện" },
-        { status: 500 }
-      );
+    if (cardError || !card) {
+      return NextResponse.json({ error: "Không tìm thấy thẻ thư viện" }, { status: 404 });
     }
 
-    // 2. Xóa độc giả
-    const { error: readerDeleteError } = await supabaseAdmin
-      .from("reader")
-      .delete()
-      .eq("reader_id", reader_id);
+    const card_id = card.card_id;
 
-    if (readerDeleteError) {
-      console.error("Lỗi xóa reader:", readerDeleteError);
-      return NextResponse.json(
-        { error: "Không thể xóa độc giả" },
-        { status: 500 }
-      );
+    // 2. Kiểm tra có reservation hay không
+    const { data: reservations, error: resvError } = await supabaseAdmin
+      .from("reservation")
+      .select("reservation_id")
+      .eq("card_id", card_id);
+
+    if (resvError) {
+      return NextResponse.json({ error: "Không thể kiểm tra reservation" }, { status: 500 });
     }
+
+    if (reservations && reservations.length > 0) {
+      return NextResponse.json({ error: "Có hàng đợi đang xử lý" }, { status: 400 });
+    }
+
+    // 3. Kiểm tra loantransaction
+    const { data: loans, error: loanError } = await supabaseAdmin
+      .from("loantransaction")
+      .select("loan_status")
+      .eq("card_id", card_id);
+
+    if (loanError) {
+      return NextResponse.json({ error: "Không thể kiểm tra giao dịch" }, { status: 500 });
+    }
+
+    const hasOverdue = loans?.some((loan) => loan.loan_status === "Quá hạn");
+    const allReturned = loans?.every((loan) => loan.loan_status === "Đã trả");
+
+    if (hasOverdue) {
+      return NextResponse.json({ error: "Còn giao dịch chưa xử lý" }, { status: 400 });
+    }
+
+    if (loans && loans.length > 0 && !allReturned) {
+      return NextResponse.json({ error: "Có hàng đợi đang xử lý" }, { status: 400 });
+    }
+
+    // 4. Xóa các bản ghi
+    await supabaseAdmin.from("librarycard").delete().eq("reader_id", reader_id);
+    await supabaseAdmin.from("reader").delete().eq("reader_id", reader_id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Lỗi server:", error);
-    return NextResponse.json(
-      { error: "Đã xảy ra lỗi không xác định" },
-      { status: 500 }
-    );
+    console.error("Lỗi xóa reader:", error);
+    return NextResponse.json({ error: "Lỗi server nội bộ" }, { status: 500 });
   }
 }

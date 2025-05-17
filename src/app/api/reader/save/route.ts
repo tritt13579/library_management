@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
     !last_name ||
     !date_of_birth ||
     !gender ||
-    !deposit_package_id ||
     !card_type
   ) {
     return NextResponse.json(
@@ -93,7 +92,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (authError || !createdUser?.user?.id) {
-    console.error("Lỗi tạo tài khoản người dùng:", authError);
+    console.error("Lỗi tạo tài khoản người dùng:", JSON.stringify(authError, null, 2));
     return NextResponse.json(
       { error: "Tạo tài khoản người dùng thất bại" },
       { status: 500 },

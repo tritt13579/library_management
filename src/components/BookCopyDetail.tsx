@@ -99,7 +99,7 @@ const BookCopyDetail = ({
                 </li>
               </ul>
               <button
-                className="mt-2 rounded bg-primary px-4 py-1.5 text-white text-sm hover:bg-primary/90"
+                className="mt-2 rounded bg-background px-4 py-1.5 text-primary text-sm"
                 onClick={() => setIsConditionOpen(true)}
               >
                 Cập nhật tình trạng

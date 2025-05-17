@@ -15,75 +15,103 @@ import ExtendCardModal from '@/components/ExtendCardModel';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import {
   Select, SelectTrigger, SelectValue,
   SelectContent, SelectItem
 } from '@/components/ui/select';
 
-const cardStatuses = ['Tất cả', 'Còn hạn', 'Chưa gia hạn'];
+const cardStatuses = ['Tất cả', 'Hoạt động', 'Chưa gia hạn', 'Đã hủy'];
 const readersPerPage = 6;
 
 const ReadersPage = () => {
   const { toast } = useToast();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [cardStatus, setCardStatus] = useState('Tất cả');
   const [currentPage, setCurrentPage] = useState(1);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const [modals, setModals] = useState({
-    detail: false, card: false, extend: false,
-    create: false, edit: false,
+    detail: false, card: false, extend: false, create: false, edit: false,
   });
 
   const [readers, setReaders] = useState<any[]>([]);
   const [selectedReader, setSelectedReader] = useState<any | null>(null);
+  const [extendMonths, setExtendMonths] = useState(3);
 
   useEffect(() => {
-    const fetchReaders = async () => {
+    const fetchData = async () => {
       const supabase = supabaseClient();
-      const { data, error } = await supabase
+
+      const { data: settingData, error: settingError } = await supabase
+        .from('systemsetting')
+        .select('setting_value')
+        .eq('setting_id', 4)
+        .single();
+
+      if (!settingError && settingData?.setting_value) {
+        setExtendMonths(parseInt(settingData.setting_value));
+      }
+
+      const { data: readerData, error: readerError } = await supabase
         .from('reader')
         .select(`
           *,
           librarycard (
             *,
-            depositpackage (*)
+            depositpackage (*),
+            reservation(*),
+            loantransaction(*)
           )
         `);
 
-      if (error) {
-        console.error('Lỗi khi lấy dữ liệu:', error);
+      if (!readerError) {
+        setReaders(readerData || []);
       } else {
-        setReaders(data || []);
+        console.error('Lỗi khi lấy độc giả:', readerError);
       }
     };
 
-    fetchReaders();
+    fetchData();
   }, [refreshTrigger]);
 
   const handleSuccess = () => {
-    setRefreshTrigger((prev) => prev + 1);
+    setRefreshTrigger(prev => prev + 1);
     toast({
-      title: "Thành công",
-      description: "Dữ liệu đã được cập nhật thành công.",
-      variant: "success",
+      title: 'Thành công',
+      description: 'Dữ liệu đã được cập nhật thành công.',
+      variant: 'success',
     });
   };
 
   const filteredReaders = readers.filter((r) => {
     const card = r.librarycard?.[0];
-    const name = `${r.first_name} ${r.last_name}`.toLowerCase();
+    const fullName = `${r.first_name} ${r.last_name}`.toLowerCase();
+    const matchName = fullName.includes(searchTerm.toLowerCase());
 
-    const matchName = name.includes(searchTerm.toLowerCase());
-    const isExpired = card?.expiry_date && new Date(card.expiry_date) < new Date();
-    const isValid = card?.expiry_date && new Date(card.expiry_date) >= new Date();
+    const expiry = card?.expiry_date ? new Date(card.expiry_date) : null;
+
+    let isExpired = false;
+    let isValid = false;
+    let isCanceled = false;
+
+    if (expiry) {
+      const now = new Date();
+      isExpired = expiry < now;
+      isValid = expiry >= now;
+
+      const extendedDate = new Date(expiry);
+      extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
+      isCanceled = now > extendedDate;
+    }
 
     const matchStatus =
       cardStatus === 'Tất cả' ||
-      (cardStatus === 'Còn hạn' && isValid) ||
-      (cardStatus === 'Chưa gia hạn' && isExpired);
+      (cardStatus === 'Hoạt động' && isValid) ||
+      (cardStatus === 'Chưa gia hạn' && isExpired && !isCanceled) ||
+      (cardStatus === 'Đã hủy' && isCanceled);
 
     return matchName && matchStatus;
   });
@@ -105,7 +133,7 @@ const ReadersPage = () => {
 
   return (
     <div className="p-6">
-      {/* Bộ lọc và menu */}
+      {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
           <Input
@@ -119,7 +147,7 @@ const ReadersPage = () => {
               <SelectValue placeholder="Trạng thái thẻ" />
             </SelectTrigger>
             <SelectContent>
-              {cardStatuses.map((status) => (
+              {cardStatuses.map(status => (
                 <SelectItem key={status} value={status}>{status}</SelectItem>
               ))}
             </SelectContent>
@@ -127,7 +155,7 @@ const ReadersPage = () => {
         </div>
 
         <div className="hidden md:flex space-x-2">
-          <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create') } />
+          <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create')} />
           <Link href="/staff/queue"><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
           <Link href="/staff/notice"><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
         </div>
@@ -136,26 +164,35 @@ const ReadersPage = () => {
           variant="outline"
           size="icon"
           className="md:hidden w-full flex justify-start p-4"
-          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+          onClick={() => setIsMobileMenuOpen(prev => !prev)}
         >
           {isMobileMenuOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
         </Button>
       </div>
 
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="mt-4 flex flex-col space-y-4 md:hidden w-full">
           <FilterButton icon={<CreditCardIcon className="icon text-[#0071BC] me-1" />} label="Tạo thẻ" onClick={() => openModal('create')} />
-          <Link href="/staff/queue" className='md:w-full'><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
-          <Link href="/staff/notice" className='md:w-full'><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
+          <Link href="/staff/queue"><FilterButton icon={<QueueListIcon className="icon text-[#0071BC] me-1" />} label="Hàng đợi" /></Link>
+          <Link href="/staff/notice"><FilterButton icon={<CalendarDateRangeIcon className="icon text-destructive me-1" />} label="Chậm trả" /></Link>
         </div>
       )}
 
-      {/* Danh sách độc giả */}
+      {/* Readers */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {paginatedReaders.map((reader, i) => {
           const card = reader.librarycard?.[0];
-          const isExpired = card?.expiry_date && new Date(card.expiry_date) < new Date();
-          const status = card ? (isExpired ? 'Chưa gia hạn' : 'Còn hạn') : 'Chưa đăng ký';
+          const status = card?.card_status || 'Chưa đăng ký';
+          const expiryDate = card?.expiry_date ? new Date(card.expiry_date) : null;
+          const now = new Date();
+          const isExpired = expiryDate && expiryDate < now;
+          let extendedDate = null;
+
+          if (isExpired && expiryDate) {
+            extendedDate = new Date(expiryDate);
+            extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
+          }
 
           return (
             <div
@@ -171,17 +208,31 @@ const ReadersPage = () => {
               <h3 className="mt-4 text-center font-semibold">{reader.last_name} {reader.first_name}</h3>
               <p className="text-center text-sm text-gray-600">{card?.card_type || 'Chưa đăng ký'}</p>
               <p className="text-center text-sm text-gray-500 mt-1">Hạn mức: {card?.depositpackage?.package_amount || 0} VND</p>
-              <p className="text-center text-sm text-gray-500">Tình trạng: {status}</p>
+
+              {isExpired ? (
+                <p className={`text-center text-sm font-semibold ${
+                  extendedDate && new Date() > extendedDate ? 'text-gray-500' : 'text-red-600'
+                }`}>
+                  Tình trạng: {
+                    extendedDate && new Date() > extendedDate ? 'Đã hủy' : 'Chưa gia hạn'
+                  }
+                </p>
+              ) : (
+                <p className="text-center text-sm text-green-600 font-semibold">
+                  Tình trạng: {status}
+                </p>
+              )}
+
               <p className="text-center text-sm text-gray-700 mt-2">{reader.address}</p>
             </div>
           );
         })}
       </div>
 
-      {/* Phân trang */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex justify-center space-x-2">
-          <PageButton label="Trước" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} />
+          <PageButton label="Trước" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} />
           {[...Array(totalPages)].map((_, idx) => (
             <PageButton
               key={idx}
@@ -190,7 +241,7 @@ const ReadersPage = () => {
               active={currentPage === idx + 1}
             />
           ))}
-          <PageButton label="Tiếp" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} />
+          <PageButton label="Tiếp" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} />
         </div>
       )}
 
@@ -202,7 +253,13 @@ const ReadersPage = () => {
         onSuccess={handleSuccess}
       />
 
-      <CardDetailModal isOpen={modals.card} onClose={closeModals} onExtend={(reader) => openModal('extend', reader)} reader={selectedReader} />
+      <CardDetailModal
+        isOpen={modals.card}
+        onClose={closeModals}
+        onExtend={(reader) => openModal('extend', reader)}
+        reader={selectedReader}
+        extendMonths={extendMonths}
+      />
 
       <ReaderDetailModal
         isOpen={modals.detail}
@@ -224,23 +281,23 @@ const ReadersPage = () => {
   );
 };
 
+// Buttons
 const FilterButton = ({ icon, label, onClick }: {
   icon: React.ReactNode;
   label: string;
   onClick?: () => void;
 }) => (
-  <Button
-    variant="outline"
-    className="flex justify-start w-full space-x-2"
-    onClick={onClick}
-  >
+  <Button variant="outline" className="flex justify-start w-full space-x-2" onClick={onClick}>
     {icon}
     <span className="text-sm">{label}</span>
   </Button>
 );
 
 const PageButton = ({ label, onClick, disabled, active }: {
-  label: string, onClick: () => void, disabled?: boolean, active?: boolean
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
 }) => (
   <button
     onClick={onClick}

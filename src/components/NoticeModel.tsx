@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ interface Props {
   today: Date;
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   numberToVietnameseWords: (n: number) => string;
 }
 
@@ -86,9 +88,13 @@ export default function NoticeModal({
   open,
   onClose,
   numberToVietnameseWords,
+  onSuccess
 }: Props) {
+  const { toast } = useToast();
   const [penaltyRate, setPenaltyRate] = useState<number | null>(null);
   const [bookList, setBookList] = useState<Book[]>(books);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -100,20 +106,28 @@ export default function NoticeModal({
   }, [open, books]);
 
   const handleMarkAllReturned = async () => {
+    setIsSaving(true);
     const uniqueTransactionIds = Array.from(
       new Set(bookList.map((book) => book.loan_transaction_id))
     );
 
     await Promise.all(uniqueTransactionIds.map(updateLoanStatus));
-    alert("Tất cả sách đã được đánh dấu là đã trả.");
+    toast({ title: "Cập nhật thành công", variant: "success" });
+    onSuccess?.();
+    onClose();
+    setIsSaving(false);
   };
 
   const handleDelete = async (loan_detail_id: number) => {
+    setIsDeleting(loan_detail_id);
     const success = await deleteLoanDetail(loan_detail_id);
     if (success) {
       const newBooks = bookList.filter((b) => b.loan_detail_id !== loan_detail_id);
       setBookList(newBooks);
-      alert("Đã xóa sách khỏi danh sách mượn.");
+      toast({ title: "Cập nhật thành công", variant: "success" });
+      onSuccess?.();
+      onClose();
+      setIsDeleting(null);
     }
   };
 
@@ -173,8 +187,9 @@ export default function NoticeModal({
                       <button
                         className="text-red-500 hover:text-red-700"
                         onClick={() => handleDelete(book.loan_detail_id)}
+                        disabled={isDeleting === book.loan_detail_id}
                       >
-                        Xóa
+                        {isDeleting === book.loan_detail_id ? "Đang xóa..." : "Xóa"}
                       </button>
                     </td>
                   </tr>
@@ -195,8 +210,8 @@ export default function NoticeModal({
             Đóng
           </Button>
           <Button onClick={() => alert("Đã gửi thông báo!")}>Gửi thông báo</Button>
-          <Button variant="outline" onClick={handleMarkAllReturned}>
-            Đã trả
+          <Button variant="outline"  onClick={handleMarkAllReturned} disabled={isSaving}>
+            {isSaving ? "Đang lưu..." : "Đã trả"}
           </Button>
         </DialogFooter>
       </DialogContent>

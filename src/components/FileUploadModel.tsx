@@ -17,7 +17,7 @@ interface FileUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (result: any) => void;
-  uploadUrl: string; 
+  uploadUrl: string;
   title?: string;
   description?: string;
 }
@@ -31,6 +31,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
   description = "Chọn một file Excel (.xlsx hoặc .xls) để tải dữ liệu lên hệ thống.",
 }) => {
   const fileRef = React.useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
 
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
@@ -38,6 +39,8 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
     const formData = new FormData();
     formData.append("file", file);
+
+    setIsUploading(true);
 
     try {
       const response = await fetch(uploadUrl, {
@@ -67,6 +70,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     } catch (err) {
       console.error("Lỗi upload:", err);
     } finally {
+      setIsUploading(false);
       onClose();
       if (fileRef.current) fileRef.current.value = "";
     }
@@ -87,14 +91,17 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
             id="file-upload"
             type="file"
             accept=".xlsx,.xls"
+            disabled={isUploading}
           />
         </div>
 
         <DialogFooter className="pt-4 space-x-2">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isUploading}>
             Hủy
           </Button>
-          <Button onClick={handleUpload}>Tải lên</Button>
+          <Button onClick={handleUpload} disabled={isUploading}>
+            {isUploading ? "Đang tải..." : "Tải lên"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

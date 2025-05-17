@@ -27,13 +27,9 @@ const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
 }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [message, setMessage] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
 
   const handleConfirm = async () => {
     setIsLoading(true);
-    setMessage(null);
-    setError(null);
 
     try {
       const res = await fetch("/api/reader/extend", {
@@ -52,7 +48,7 @@ const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra");
+      toast({ title: "Lỗi", description: err.message || "Có lỗi xảy ra", variant: "destructive",});
     } finally {
       setIsLoading(false);
     }
@@ -67,9 +63,6 @@ const ExtendCardModal: React.FC<ExtendCardModalProps> = ({
 
         <div className="grid gap-4 py-4">
           <Label>Nhấn gia hạn để gia hạn thẻ theo thời hạn mặc định.</Label>
-
-          {message && <p className="text-green-600 text-sm">{message}</p>}
-          {error && <p className="text-red-600 text-sm">{error}</p>}
         </div>
 
         <DialogFooter>

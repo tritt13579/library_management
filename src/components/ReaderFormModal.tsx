@@ -114,7 +114,7 @@ const ReaderFormModal = ({
         phone: reader.phone || "",
         email: reader.email || "",
         photo_url: reader.photo_url || "",
-        card_type: reader.librarycard?.[0]?.card_type?.includes("Mượn") ? "Mượn" : "Đọc",
+        card_type: reader.librarycard?.[0]?.card_type === "Thẻ đọc" ? "Đọc" : "Mượn",
         deposit_package_id:
           reader.librarycard?.[0]?.deposit_package_id?.toString() || "",
       });
@@ -196,8 +196,14 @@ const ReaderFormModal = ({
       } else {
         console.log("Có lỗi xảy ra.");
       }
-    } catch (err) {
-      console.log("Lỗi khi gửi dữ liệu.");
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.error || "Có lỗi xảy ra khi gửi dữ liệu.";
+      toast({
+        title: "Lỗi từ hệ thống",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      console.error("Lỗi khi gửi dữ liệu:", errorMessage);
       setIsSaving(false);
     }
   };

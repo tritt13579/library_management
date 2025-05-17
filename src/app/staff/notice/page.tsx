@@ -3,13 +3,7 @@ import React, { useState, useEffect } from "react";
 import { supabaseClient } from "@/lib/client";
 import { Input } from "@/components/ui/input";
 import NoticeModal from "@/components/NoticeModel";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 function numberToVietnameseWords(n: number): string {
   if (n === 0) return "không";
@@ -57,11 +51,14 @@ function numberToVietnameseWords(n: number): string {
 }
 
 export default function NoticePage() {
+  const { toast } = useToast();
   const today = new Date();
   const [selectedBorrower, setSelectedBorrower] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const [selectedNotifyStatus, setSelectedNotifyStatus] = useState('');
   const [selectedDueStatus, setSelectedDueStatus] = useState('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
   const [loan, setLoan] = useState<any[]>([]);
 
   useEffect(() => {
@@ -84,7 +81,7 @@ export default function NoticePage() {
       }
     };
     fetchLoan();
-  }, []);
+  }, [refreshTrigger]);
 
   const borrowedBooks = loan.flatMap((l) =>
     l.loandetail.map((detail: any) => ({
@@ -104,6 +101,15 @@ export default function NoticePage() {
       loan_detail_id: detail.loan_detail_id,
     }))
   );
+
+  const handleSuccess = () => {
+    setRefreshTrigger((prev) => prev + 1);
+    toast({
+      title: "Thành công",
+      description: "Dữ liệu đã được cập nhật thành công.",
+      variant: "success",
+    });
+  };
 
   const overdueBooks = borrowedBooks.filter(
     (book) => new Date(book.dueAt) < today && book.status !== 'Đã trả'
@@ -187,6 +193,7 @@ export default function NoticePage() {
           }}
           onClose={() => setSelectedBorrower(null)}
           numberToVietnameseWords={numberToVietnameseWords}
+          onSuccess={handleSuccess}
         />
       )}
     </div>

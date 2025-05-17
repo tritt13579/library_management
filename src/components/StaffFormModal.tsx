@@ -88,39 +88,61 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   const handleSubmit = async () => {
     const role_id = parseInt(role);
     if (isNaN(role_id)) {
-      alert("Chức vụ không hợp lệ");
+      toast({
+        title: "Chức vụ không hợp lệ",
+        variant: "destructive",
+      });
       return;
     }
 
     setLoading(true);
     const staffId = isEditOpen && staffData?.staff_id ? staffData.staff_id : null;
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/staff/save`, {
-      method: "POST",
-      body: JSON.stringify({
-        staffId,
-        role_id,
-        first_name: firstName,
-        last_name: lastName,
-        date_of_birth: dob,
-        gender: gender === "Nam" ? "M" : "F",
-        address,
-        phone,
-        email,
-        hire_date: hireDate,
-      }),
-    });
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/staff/save`, {
+        method: "POST",
+        body: JSON.stringify({
+          staffId,
+          role_id,
+          first_name: firstName,
+          last_name: lastName,
+          date_of_birth: dob,
+          gender: gender === "Nam" ? "M" : "F",
+          address,
+          phone,
+          email,
+          hire_date: hireDate,
+        }),
+      });
 
-    const result = await res.json();
-    setLoading(false);
+      const result = await res.json();
+      setLoading(false);
 
-    if (res.ok) {
-      toast({ title: isEditOpen ? "Cập nhật thành công" : "Thêm nhân viên thành công", variant: "success" });
+      if (!res.ok) {
+        toast({
+          title: "Lỗi từ hệ thống",
+          description: result?.error || "Đã xảy ra lỗi không xác định",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: isEditOpen ? "Cập nhật thành công" : "Thêm nhân viên thành công",
+        variant: "success",
+      });
+
       onSuccess?.();
       closeAdd();
       resetForm();
-    } else {
-      console.log("Lỗi: " + result.error);
+    } catch (err) {
+      setLoading(false);
+      toast({
+        title: "Lỗi kết nối",
+        description: "Không thể gửi yêu cầu đến máy chủ",
+        variant: "destructive",
+      });
+      console.error("Fetch error:", err);
     }
   };
 
