@@ -1,4 +1,4 @@
-// /app/api/permissions/route.ts
+// /app/api//staff/permissions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/admin";
 import { createClient } from "@/auth/server";

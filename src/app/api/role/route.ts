@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
     const userId = user.user.id;
     let role = null;
 
-    // Kiểm tra xem user có phải là reader hay không
     const { data: readerData } = await supabaseAdmin
       .from("reader")
       .select("reader_id")
@@ -27,7 +26,6 @@ export async function GET(req: NextRequest) {
 
     if (readerData) role = "reader";
 
-    // Kiểm tra xem user có phải là staff hay không
     const { data: staffData } = await supabaseAdmin
       .from("staff")
       .select("staff_id")
