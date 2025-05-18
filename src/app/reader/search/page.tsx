@@ -35,6 +35,14 @@ const SearchPage = () => {
   const goToPrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const goToNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
+  
+  function shuffleArray(array: any[]) {
+    return array
+      .map((value) => ({ value, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ value }) => value);
+  }
+
   useEffect(() => {
     const fetchBook = async () => {
       const supabase = supabaseClient();
@@ -62,8 +70,10 @@ const SearchPage = () => {
           )
           .filter(Boolean);
 
-        setBook(allCopies);
-        setFilteredBooks(allCopies);
+        const shuffledCopies = shuffleArray(allCopies);
+
+        setBook(shuffledCopies);
+        setFilteredBooks(shuffledCopies);
       }
     };
 
