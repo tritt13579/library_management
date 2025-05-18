@@ -26,6 +26,7 @@ const SearchPage = () => {
   const [shelfFilter, setShelfFilter] = useState("all");
   const [publisherFilter, setPublisherFilter] = useState("all");
   const [sortOption, setSortOption] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
   const startIdx = (currentPage - 1) * booksPerPage;
@@ -39,7 +40,7 @@ const SearchPage = () => {
       const supabase = supabaseClient();
       const { data, error } = await supabase
         .from("booktitle")
-        .select(`*, category:category_id(category_name), iswrittenby!inner (author:author_id ( author_name )), bookcopy(*, condition:condition_id(condition_name, description)), shelf:shelf_id(location), publisher:publisher_id(publisher_name)`);
+        .select(`*, category:category_id(category_name), iswrittenby!inner (author:author_id ( author_name )), bookcopy(*, condition:condition_id(condition_name, description), loandetail(*, loantransaction(*))), shelf:shelf_id(location), publisher:publisher_id(publisher_name)`);
 
       if (error) {
         console.error("Error fetching books:", error);
@@ -93,6 +94,17 @@ const SearchPage = () => {
       filtered = filtered.filter(
         (b) => b.publisher?.publisher_name.toLowerCase() === publisherFilter
       );
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((b) => {
+        const isBorrowed = b.bookcopy?.some((copy: any) =>
+          copy.loandetail?.some((ld: any) =>
+            ld.loantransaction?.loan_status === "Đang mượn" || ld.loantransaction?.loan_status === "Quá hạn"
+          )
+        );
+        return statusFilter === "borrowed" ? isBorrowed : !isBorrowed;
+      });
     }
 
     if (sortOption === "moinhat") {
@@ -189,6 +201,17 @@ const SearchPage = () => {
           </SelectContent>
         </Select>
 
+        <Select onValueChange={setStatusFilter}>
+          <SelectTrigger className="flex-1 min-w-[160px]">
+            <SelectValue placeholder="Tình trạng" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="borrowed">Đang được mượn</SelectItem>
+            <SelectItem value="available">Chưa được mượn</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Select onValueChange={setSortOption}>
           <SelectTrigger className="flex-1 min-w-[160px]">
             <SelectValue placeholder="Sắp xếp theo" />
@@ -204,25 +227,35 @@ const SearchPage = () => {
       <p>Tổng số {filteredBooks.length} tài liệu</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-10">
-        {currentBooks.map((item, index) => (
-          <div
-            key={index}
-            className="group border rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
-          >
-            <img
-              src={item.cover_image || "/placeholder.jpg"}
-              alt={item.title}
-              className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="p-4 space-y-1">
-              <h2 className="text-lg font-semibold text-gray-800">{item.title}</h2>
-              <p className="text-sm text-gray-600">Tác giả: {item.iswrittenby?.[0]?.author?.author_name || "Không rõ"}</p>
-              <p className="text-sm text-gray-600">NXB: {item.publisher?.publisher_name || "Không rõ"}</p>
-              <p className="text-sm text-gray-600">Kệ: {item.shelf?.location || "Không rõ"}</p>
-              <p className="text-sm font-medium text-green-600">Tình trạng: Đang cập nhật</p>
+        {currentBooks.map((item, index) => {
+          const isBorrowed = item.bookcopy?.some((copy: any) =>
+            copy.loandetail?.some((ld: any) =>
+              ld.loantransaction?.loan_status === "Đang mượn" || ld.loantransaction?.loan_status === "Quá hạn"
+            )
+          );
+
+          return (
+            <div
+              key={index}
+              className="group border rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+            >
+              <img
+                src={item.cover_image || "/placeholder.jpg"}
+                alt={item.title}
+                className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="p-4 space-y-1">
+                <h2 className="text-lg font-semibold text-gray-800">{item.title}</h2>
+                <p className="text-sm text-gray-600">Tác giả: {item.iswrittenby?.[0]?.author?.author_name || "Không rõ"}</p>
+                <p className="text-sm text-gray-600">NXB: {item.publisher?.publisher_name || "Không rõ"}</p>
+                <p className="text-sm text-gray-600">Kệ: {item.shelf?.location || "Không rõ"}</p>
+                <p className={`text-sm font-medium ${isBorrowed ? "text-red-600" : "text-green-600"}`}>
+                  Tình trạng: {isBorrowed ? "Đang được mượn" : "Chưa được mượn"}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex justify-center items-center gap-4 mt-4 pb-4">
