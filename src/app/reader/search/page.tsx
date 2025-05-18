@@ -40,13 +40,30 @@ const SearchPage = () => {
       const supabase = supabaseClient();
       const { data, error } = await supabase
         .from("booktitle")
-        .select(`*, category:category_id(category_name), iswrittenby!inner (author:author_id ( author_name )), bookcopy(*, condition:condition_id(condition_name, description), loandetail(*, loantransaction(*))), shelf:shelf_id(location), publisher:publisher_id(publisher_name)`);
+        .select(
+          `*, category:category_id(category_name), iswrittenby!inner (author:author_id ( author_name )), bookcopy(*, condition:condition_id(condition_name, description), loandetail(*, loantransaction(*))), shelf:shelf_id(location), publisher:publisher_id(publisher_name)`
+        );
 
       if (error) {
         console.error("Error fetching books:", error);
       } else {
-        setBook(data);
-        setFilteredBooks(data);
+        // Chuyển đổi dữ liệu thành danh sách các bản sách (bookcopy)
+        const allCopies = data
+          .flatMap((booktitle: any) =>
+            booktitle.bookcopy?.map((copy: any) => ({
+              ...copy,
+              title: booktitle.title,
+              cover_image: booktitle.cover_image,
+              category: booktitle.category,
+              shelf: booktitle.shelf,
+              publisher: booktitle.publisher,
+              authors: booktitle.iswrittenby?.map((w: any) => w.author),
+            }))
+          )
+          .filter(Boolean);
+
+        setBook(allCopies);
+        setFilteredBooks(allCopies);
       }
     };
 
@@ -58,67 +75,65 @@ const SearchPage = () => {
 
     if (titleFilter.trim()) {
       filtered = filtered.filter((b) =>
-        b.title.toLowerCase().includes(titleFilter.toLowerCase())
+        b.title?.toLowerCase().includes(titleFilter.toLowerCase())
       );
     }
 
     if (codeFilter.trim()) {
-      filtered = filtered.filter((b) =>
-        b.bookcopy?.some((copy: any) =>
-          copy.book_copy_id.toLowerCase().includes(codeFilter.toLowerCase())
-        )
-      );
+      filtered = filtered.filter((b) => {
+        const copyId = b.copy_id;
+        if (!copyId) return false; 
+        return String(copyId).toLowerCase() === codeFilter.toLowerCase();
+      });
     }
 
     if (authorFilter !== "all") {
       filtered = filtered.filter((b) =>
-        b.iswrittenby?.some((w: any) =>
-          w.author?.author_name.toLowerCase() === authorFilter
+        b.authors?.some(
+          (a: any) => a.author_name?.toLowerCase() === authorFilter.toLowerCase()
         )
       );
     }
 
     if (categoryFilter !== "all") {
       filtered = filtered.filter(
-        (b) => b.category?.category_name.toLowerCase() === categoryFilter
+        (b) => b.category?.category_name?.toLowerCase() === categoryFilter.toLowerCase()
       );
     }
 
     if (shelfFilter !== "all") {
       filtered = filtered.filter(
-        (b) => b.shelf?.location.toLowerCase() === shelfFilter
+        (b) => b.shelf?.location?.toLowerCase() === shelfFilter.toLowerCase()
       );
     }
 
     if (publisherFilter !== "all") {
       filtered = filtered.filter(
-        (b) => b.publisher?.publisher_name.toLowerCase() === publisherFilter
+        (b) =>
+          b.publisher?.publisher_name?.toLowerCase() === publisherFilter.toLowerCase()
       );
     }
 
     if (statusFilter !== "all") {
       filtered = filtered.filter((b) => {
-        const isBorrowed = b.bookcopy?.some((copy: any) =>
-          copy.loandetail?.some((ld: any) =>
-            ld.loantransaction?.loan_status === "Đang mượn" || ld.loantransaction?.loan_status === "Quá hạn"
-          )
+        const isBorrowed = b.loandetail?.some((ld: any) =>
+          ld.loantransaction?.loan_status === "Đang mượn" ||
+          ld.loantransaction?.loan_status === "Quá hạn"
         );
         return statusFilter === "borrowed" ? isBorrowed : !isBorrowed;
       });
     }
 
     if (sortOption === "moinhat") {
-      filtered.sort((a, b) => {
-        const aDate = new Date(Math.max(...(a.bookcopy?.map((c: any) => new Date(c.acquisition_date).getTime()) || [0])));
-        const bDate = new Date(Math.max(...(b.bookcopy?.map((c: any) => new Date(c.acquisition_date).getTime()) || [0])));
-        return bDate.getTime() - aDate.getTime();
-      });
+      filtered.sort(
+        (a, b) =>
+          new Date(b.acquisition_date).getTime() - new Date(a.acquisition_date).getTime()
+      );
     } else if (sortOption === "cunhat") {
-      filtered.sort((a, b) => {
-        const aDate = new Date(Math.min(...(a.bookcopy?.map((c: any) => new Date(c.acquisition_date).getTime()) || [Infinity])));
-        const bDate = new Date(Math.min(...(b.bookcopy?.map((c: any) => new Date(c.acquisition_date).getTime()) || [Infinity])));
-        return aDate.getTime() - bDate.getTime();
-      });
+      filtered.sort(
+        (a, b) =>
+          new Date(a.acquisition_date).getTime() - new Date(b.acquisition_date).getTime()
+      );
     } else if (sortOption === "theoten") {
       filtered.sort((a, b) => a.title.localeCompare(b.title));
     }
@@ -159,9 +174,13 @@ const SearchPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(book.flatMap(b => b.iswrittenby?.map((w: any) => w.author?.author_name)))].filter(Boolean).map((name, i) => (
-              <SelectItem key={i} value={name.toLowerCase()}>{name}</SelectItem>
-            ))}
+            {[...new Set(book.flatMap((b) => b.authors?.map((a: any) => a.author_name)))]
+              .filter(Boolean)
+              .map((name, i) => (
+                <SelectItem key={i} value={name.toLowerCase()}>
+                  {name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
@@ -171,9 +190,13 @@ const SearchPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(book.map(b => b.category?.category_name))].filter(Boolean).map((cat, i) => (
-              <SelectItem key={i} value={cat.toLowerCase()}>{cat}</SelectItem>
-            ))}
+            {[...new Set(book.map((b) => b.category?.category_name))]
+              .filter(Boolean)
+              .map((cat, i) => (
+                <SelectItem key={i} value={cat.toLowerCase()}>
+                  {cat}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
@@ -183,9 +206,13 @@ const SearchPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(book.map(b => b.shelf?.location))].filter(Boolean).map((loc, i) => (
-              <SelectItem key={i} value={loc.toLowerCase()}>{loc}</SelectItem>
-            ))}
+            {[...new Set(book.map((b) => b.shelf?.location))]
+              .filter(Boolean)
+              .map((loc, i) => (
+                <SelectItem key={i} value={loc.toLowerCase()}>
+                  {loc}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
@@ -195,9 +222,13 @@ const SearchPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(book.map(b => b.publisher?.publisher_name))].filter(Boolean).map((pub, i) => (
-              <SelectItem key={i} value={pub.toLowerCase()}>{pub}</SelectItem>
-            ))}
+            {[...new Set(book.map((b) => b.publisher?.publisher_name))]
+              .filter(Boolean)
+              .map((pub, i) => (
+                <SelectItem key={i} value={pub.toLowerCase()}>
+                  {pub}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
@@ -227,11 +258,11 @@ const SearchPage = () => {
       <p>Tổng số {filteredBooks.length} tài liệu</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-10">
-        {currentBooks.map((item, index) => {
-          const isBorrowed = item.bookcopy?.some((copy: any) =>
-            copy.loandetail?.some((ld: any) =>
-              ld.loantransaction?.loan_status === "Đang mượn" || ld.loantransaction?.loan_status === "Quá hạn"
-            )
+        {currentBooks.map((copy, index) => {
+          const isBorrowed = copy.loandetail?.some(
+            (ld: any) =>
+              ld.loantransaction?.loan_status === "Đang mượn" ||
+              ld.loantransaction?.loan_status === "Quá hạn"
           );
 
           return (
@@ -240,18 +271,33 @@ const SearchPage = () => {
               className="group border rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
             >
               <img
-                src={item.cover_image || "/placeholder.jpg"}
-                alt={item.title}
+                src={copy.cover_image || "/placeholder.jpg"}
+                alt={copy.title}
                 className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div className="p-4 space-y-1">
-                <h2 className="text-lg font-semibold text-gray-800">{item.title}</h2>
-                <p className="text-sm text-gray-600">Tác giả: {item.iswrittenby?.[0]?.author?.author_name || "Không rõ"}</p>
-                <p className="text-sm text-gray-600">NXB: {item.publisher?.publisher_name || "Không rõ"}</p>
-                <p className="text-sm text-gray-600">Kệ: {item.shelf?.location || "Không rõ"}</p>
-                <p className={`text-sm font-medium ${isBorrowed ? "text-red-600" : "text-green-600"}`}>
+                <h2 className="text-lg font-semibold text-gray-800">{copy.title}</h2>
+                <p className="text-sm text-gray-600">Mã sách: {copy.book_copy_id}</p>
+                <p className="text-sm text-gray-600">
+                  Tác giả: {copy.authors?.[0]?.author_name || "Không rõ"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Thể loại: {copy.category?.category_name || "Không rõ"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  NXB: {copy.publisher?.publisher_name || "Không rõ"}
+                </p>
+                <p className="text-sm text-gray-600">Kệ: {copy.shelf?.location || "Không rõ"}</p>
+                <p
+                  className={`text-sm font-medium ${
+                    isBorrowed ? "text-red-600" : "text-green-600"
+                  }`}
+                >
                   Tình trạng: {isBorrowed ? "Đang được mượn" : "Chưa được mượn"}
                 </p>
+                <Button className="mt-2 w-full" variant="secondary">
+                  Đặt sách
+                </Button>
               </div>
             </div>
           );
@@ -259,9 +305,15 @@ const SearchPage = () => {
       </div>
 
       <div className="flex justify-center items-center gap-4 mt-4 pb-4">
-        <Button onClick={goToPrev} disabled={currentPage === 1} variant="outline">Trước</Button>
-        <span className="text-sm text-gray-600">Trang {currentPage} / {totalPages || 1}</span>
-        <Button onClick={goToNext} disabled={currentPage === totalPages} variant="outline">Sau</Button>
+        <Button onClick={goToPrev} disabled={currentPage === 1} variant="outline">
+          Trước
+        </Button>
+        <span className="text-sm text-gray-600">
+          Trang {currentPage} / {totalPages || 1}
+        </span>
+        <Button onClick={goToNext} disabled={currentPage === totalPages} variant="outline">
+          Sau
+        </Button>
       </div>
     </div>
   );

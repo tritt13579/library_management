@@ -19,48 +19,73 @@ export async function POST(req: NextRequest) {
 
   if (cardFetchError || !cardData) {
     console.error(cardFetchError);
-    console.log("Gia hạn thẻ cho readerId:", readerId);
-    return NextResponse.json(
-      { error: "Không thể gia hạn" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Không thể gia hạn" }, { status: 404 });
   }
 
   const currentExpiryDate = new Date(cardData.expiry_date);
 
-  // Lấy thời hạn gia hạn từ systemsetting
-  const { data: settingData, error: settingError } = await supabaseAdmin
+  // Lấy thời hạn thẻ
+  const { data: durationSetting, error: durationError } = await supabaseAdmin
     .from("systemsetting")
     .select("setting_value")
     .eq("setting_name", "Thời hạn thẻ")
     .single();
 
-  if (settingError || !settingData) {
-    console.error(settingError);
-    return NextResponse.json(
-      { error: "Không lấy được thời hạn thẻ" },
-      { status: 500 },
-    );
+  if (durationError || !durationSetting) {
+    console.error(durationError);
+    return NextResponse.json({ error: "Không lấy được thời hạn thẻ" }, { status: 500 });
   }
 
-  const extendMonths = parseInt(settingData.setting_value);
+  const extendMonths = parseInt(durationSetting.setting_value);
   const newExpiryDate = new Date(currentExpiryDate);
   newExpiryDate.setMonth(newExpiryDate.getMonth() + extendMonths);
 
-  // Cập nhật ngày hết hạn mới
+  // Lấy số tháng để xác định "Đã hủy"
+  const { data: cancelSetting, error: cancelError } = await supabaseAdmin
+    .from("systemsetting")
+    .select("setting_value")
+    .eq("setting_name", "Hủy thẻ thư viện")
+    .single();
+
+  if (cancelError || !cancelSetting) {
+    console.error(cancelError);
+    return NextResponse.json({ error: "Không lấy được thời gian hủy thẻ" }, { status: 500 });
+  }
+
+  const cancelMonths = parseInt(cancelSetting.setting_value);
+
+  // Xác định trạng thái mới dựa vào newExpiryDate và thời gian hiện tại
+  const now = new Date();
+  let newStatus = "Chưa gia hạn";
+
+  if (newExpiryDate > now) {
+    newStatus = "Hoạt động";
+  } else {
+    const cancelThreshold = new Date(newExpiryDate);
+    cancelThreshold.setMonth(cancelThreshold.getMonth() + cancelMonths);
+    if (now > cancelThreshold) {
+      newStatus = "Đã hủy";
+    }
+  }
+
+  // Cập nhật thẻ thư viện
   const { error: updateError } = await supabaseAdmin
     .from("librarycard")
-    .update({ expiry_date: newExpiryDate.toISOString().split("T")[0] })
+    .update({
+      expiry_date: newExpiryDate.toISOString().split("T")[0],
+      card_status: newStatus,
+    })
     .eq("reader_id", readerId)
     .in("card_status", ["Hoạt động", "Chưa gia hạn"]);
 
   if (updateError) {
     console.error(updateError);
-    return NextResponse.json(
-      { error: "Gia hạn thẻ thất bại" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Gia hạn thẻ thất bại" }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, new_expiry_date: newExpiryDate.toISOString().split("T")[0] });
+  return NextResponse.json({
+    success: true,
+    new_expiry_date: newExpiryDate.toISOString().split("T")[0],
+    new_status: newStatus,
+  });
 }
