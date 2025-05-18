@@ -1,4 +1,4 @@
-// app/api/loan-transactions/route.ts
+// app/api/loan-transactions/add/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/admin";
 
