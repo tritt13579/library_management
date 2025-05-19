@@ -50,11 +50,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Kiểm tra tình trạng sách không bị hư hại
     const { data: bookCopiesConditionData, error: bookCopiesConditionError } =
       await supabaseAdmin
         .from("bookcopy")
-        .select("copy_id, condition_id, condition!inner(condition_name)")
+        .select(
+          "copy_id, condition_id, condition!inner(condition_name), availability_status",
+        )
         .in("copy_id", bookCopies);
 
     if (bookCopiesConditionError || !bookCopiesConditionData) {
@@ -70,10 +71,14 @@ export async function POST(req: NextRequest) {
         book.condition[0]?.condition_name === "Bị hư hại",
     );
 
-    if (damagedBooks.length > 0) {
+    const unavailableBooks = bookCopiesConditionData.filter(
+      (book) => book.availability_status !== "Có sẵn",
+    );
+
+    if (unavailableBooks.length > 0) {
       return NextResponse.json(
         {
-          error: "Không thể cho mượn sách bị hư hại",
+          error: "Một hoặc nhiều sách không ở trạng thái có thể mượn",
           damagedBooks: damagedBooks.map((book) => book.copy_id),
         },
         { status: 400 },
@@ -242,6 +247,11 @@ export async function POST(req: NextRequest) {
       .from("librarycard")
       .update({ current_deposit_balance: newDepositBalance })
       .eq("card_id", cardId);
+
+    await supabaseAdmin
+      .from("bookcopy")
+      .update({ availability_status: "Đang mượn" })
+      .in("copy_id", bookCopies);
 
     if (updateCardError) {
       // Nếu xảy ra lỗi, cần rollback các bước trước đó

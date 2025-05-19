@@ -2,7 +2,13 @@
 
 import React, { useState } from "react";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const BookCopyModal = ({
   isOpen,
@@ -30,7 +36,7 @@ const BookCopyModal = ({
         acquisition_date: acquisitionDate,
         price: parseFloat(price),
         condition_id: parseInt(conditionId),
-      })
+      }),
     );
 
     try {
@@ -67,7 +73,7 @@ const BookCopyModal = ({
         <DialogHeader>
           <DialogTitle>Thêm bản sao mới</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground">
@@ -87,7 +93,7 @@ const BookCopyModal = ({
               type="date"
               value={acquisitionDate}
               onChange={(e) => setAcquisitionDate(e.target.value)}
-              className="mt-1 w-full rounded-md border px-3 py-2 bg-primary-foreground"
+              className="mt-1 w-full rounded-md border bg-primary-foreground px-3 py-2"
             />
           </div>
 
@@ -98,7 +104,7 @@ const BookCopyModal = ({
               min="0"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="mt-1 w-full rounded-md border px-3 py-2 bg-primary-foreground"
+              className="mt-1 w-full rounded-md border bg-primary-foreground px-3 py-2"
             />
           </div>
         </div>

@@ -164,6 +164,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
           isLost: false,
           lateFee: lateFee,
           damageFee: 0,
+          availabilityStatus: "Có sẵn", // Default availability status when returning
         };
       });
 
@@ -227,8 +228,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
   const handleConditionChange = (index: number, value: string) => {
     const conditionId = parseInt(value);
     const bookStatus = booksStatus[index];
-    const isLost = conditionId === 4; // Thất lạc has ID 4
-    const isDamaged = conditionId === 3; // Bị hư hại has ID 3
 
     // Validate condition change (can only decrease, not increase)
     if (conditionId < bookStatus.book.condition_id) {
@@ -241,14 +240,34 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       return;
     }
 
-    let damageFee = 0;
+    // Calculate damage fee based on condition (damaged = condition_id 3)
+    const isDamaged = conditionId === 3;
+    const damageFee = isDamaged ? bookStatus.book.price * 0.5 : 0;
 
-    // Calculate damage fee based on condition
+    setBooksStatus((prevStatus) => {
+      const newStatus = [...prevStatus];
+      newStatus[index] = {
+        ...newStatus[index],
+        newCondition: conditionId,
+        damageFee: newStatus[index].isLost
+          ? newStatus[index].damageFee
+          : damageFee,
+      };
+      return newStatus;
+    });
+  };
+
+  const handleAvailabilityStatusChange = (index: number, value: string) => {
+    const bookStatus = booksStatus[index];
+    const isLost = value === "Thất lạc";
+
+    // Calculate damage fee based on availability status
+    let damageFee = 0;
     if (isLost) {
       // Lost book: 100% of book price
       damageFee = bookStatus.book.price;
-    } else if (isDamaged) {
-      // Damaged book: 50% of book price
+    } else if (bookStatus.newCondition === 3) {
+      // If the book is not lost but is damaged, keep the damage fee
       damageFee = bookStatus.book.price * 0.5;
     }
 
@@ -256,7 +275,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       const newStatus = [...prevStatus];
       newStatus[index] = {
         ...newStatus[index],
-        newCondition: conditionId,
+        availabilityStatus: value,
         isLost,
         damageFee,
       };
@@ -384,6 +403,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
                 handleToggleSelectAll={handleToggleSelectAll}
                 handleToggleSelect={handleToggleSelect}
                 handleConditionChange={handleConditionChange}
+                handleAvailabilityStatusChange={handleAvailabilityStatusChange}
               />
             )}
 

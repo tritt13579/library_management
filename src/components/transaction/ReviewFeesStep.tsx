@@ -66,7 +66,9 @@ export const ReviewFeesStep: React.FC<ReviewFeesStepProps> = ({
                     <TableRow>
                       <TableCell>{status.book.title}</TableCell>
                       <TableCell>
-                        {status.isLost ? "Phí thất lạc" : "Phí hư hại"}
+                        {status.availabilityStatus === "Thất lạc"
+                          ? "Phí thất lạc"
+                          : "Phí hư hại"}
                       </TableCell>
                       <TableCell className="text-right">
                         {status.damageFee.toLocaleString("vi-VN")} VNĐ

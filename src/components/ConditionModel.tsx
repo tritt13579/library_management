@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,10 @@ interface ConditionModalProps {
   copyId: number;
   currentConditionId?: string;
   conditions: { id: string; name: string }[];
-  onSuccess?: (updatedCondition?: { condition_id: number; condition_name: string }) => void;
+  onSuccess?: (updatedCondition?: {
+    condition_id: number;
+    condition_name: string;
+  }) => void;
 }
 
 const ConditionModal: React.FC<ConditionModalProps> = ({
@@ -36,8 +39,32 @@ const ConditionModal: React.FC<ConditionModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
-  const [selectedCondition, setSelectedCondition] = useState(currentConditionId || "");
+  const [selectedCondition, setSelectedCondition] = useState(
+    currentConditionId || "",
+  );
   const [loading, setLoading] = useState(false);
+
+  // Đặt giá trị mặc định cho selectedCondition khi modal mở
+  useEffect(() => {
+    if (isOpen && currentConditionId) {
+      setSelectedCondition(currentConditionId);
+    }
+  }, [isOpen, currentConditionId]);
+
+  // Tìm condition hiện tại
+  const currentCondition = conditions.find(
+    (cond) => cond.id === currentConditionId,
+  );
+
+  // Lọc ra các condition có id lớn hơn hoặc bằng condition hiện tại
+  // Vì id tăng dần nhưng trạng thái giảm dần (1: Còn mới, 2: Đã cũ, 3: Bị hư hại)
+  const availableConditions = conditions.filter((cond) => {
+    // Nếu chưa có currentConditionId, hiển thị tất cả các lựa chọn
+    if (!currentConditionId) return true;
+
+    // Nếu đã có currentConditionId, chỉ hiển thị các condition có id >= currentConditionId
+    return parseInt(cond.id) >= parseInt(currentConditionId);
+  });
 
   const handleSave = async () => {
     if (!selectedCondition || !copyId) return;
@@ -56,14 +83,22 @@ const ConditionModal: React.FC<ConditionModalProps> = ({
       });
 
       const result = await response.json();
+
       if (!response.ok) {
         console.error("Lỗi cập nhật:", result.error);
-        alert("Không thể cập nhật tình trạng. Vui lòng thử lại.");
+        toast({
+          title: "Lỗi cập nhật tình trạng",
+          description:
+            result.error || "Không thể cập nhật tình trạng. Vui lòng thử lại.",
+          variant: "destructive",
+        });
       } else {
-        const updatedCond = conditions.find(
-          (c) => c.id === selectedCondition
-        );
-        toast({ title: "Cập nhật thành công", variant: "success" });
+        const updatedCond = conditions.find((c) => c.id === selectedCondition);
+        toast({
+          title: "Cập nhật thành công",
+          description: `Đã chuyển sang "${updatedCond?.name}"`,
+          variant: "success",
+        });
         onSuccess?.({
           condition_id: Number(updatedCond?.id),
           condition_name: updatedCond?.name || "",
@@ -72,11 +107,20 @@ const ConditionModal: React.FC<ConditionModalProps> = ({
       }
     } catch (err) {
       console.error("Lỗi khi gọi API:", err);
-      alert("Có lỗi xảy ra.");
+      toast({
+        title: "Lỗi hệ thống",
+        description: "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  // Tìm tên của condition hiện tại để hiển thị
+  const currentConditionName = currentCondition
+    ? currentCondition.name
+    : "Chọn tình trạng";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -90,10 +134,10 @@ const ConditionModal: React.FC<ConditionModalProps> = ({
             onValueChange={setSelectedCondition}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Chọn tình trạng" />
+              <SelectValue placeholder={currentConditionName} />
             </SelectTrigger>
             <SelectContent>
-              {conditions.map((cond) => (
+              {availableConditions.map((cond) => (
                 <SelectItem key={cond.id} value={cond.id}>
                   {cond.name}
                 </SelectItem>

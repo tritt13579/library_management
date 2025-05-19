@@ -26,6 +26,7 @@ export interface BookReturnStatus {
     copy_id: number;
     loan_detail_id: number;
   };
+  availabilityStatus?: string;
   isSelected: boolean;
   newCondition: number | null;
   isLost: boolean;
