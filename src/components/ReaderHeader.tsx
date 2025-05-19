@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   UserIcon,
-  MagnifyingGlassIcon,
   CreditCardIcon,
   Bars3Icon,
   XMarkIcon,
@@ -47,17 +46,7 @@ const ReaderHeader = ({ user }: { user: any }) => {
           </div>
 
           {/* Desktop menu */}
-          <div className="hidden w-2/3 items-center space-x-6 lg:flex">
-            {/* Search */}
-            <div className="relative flex w-1/2 items-center">
-              <input
-                type="text"
-                placeholder="Tìm kiếm sách, tài liệu..."
-                className="w-full rounded-lg border bg-background py-2 pl-4 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <MagnifyingGlassIcon className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
-            </div>
-
+          <div className="hidden w-2/3 items-center space-x-6 lg:flex justify-end">
             {/* Auth buttons */}
             <div className="flex items-center space-x-4">
               <DarkModeToggle />
@@ -65,11 +54,9 @@ const ReaderHeader = ({ user }: { user: any }) => {
               {user ? (
                 <UserDropdown />
               ) : (
-                <>
-                  <Button asChild variant="outline">
-                    <Link href="/login">Login</Link>
-                  </Button>
-                </>
+                <Button asChild variant="outline">
+                  <Link href="/login">Login</Link>
+                </Button>
               )}
             </div>
 
@@ -96,16 +83,7 @@ const ReaderHeader = ({ user }: { user: any }) => {
         {/* Mobile menu */}
         {isMenuOpen && (
           <div className="flex flex-col items-center space-y-3 pb-4 lg:hidden">
-            <div className="relative flex w-11/12 items-center">
-              <input
-                type="text"
-                placeholder="Tìm kiếm sách, tài liệu..."
-                className="w-full rounded-lg border bg-background py-2 pl-4 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-[#0071BC]"
-              />
-              <MagnifyingGlassIcon className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
-            </div>
-
-            {[
+            {[ 
               {
                 icon: <UserIcon className="h-5 w-5 text-primary" />,
                 label: "Đăng nhập",
