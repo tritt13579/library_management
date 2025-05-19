@@ -137,28 +137,38 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Update library card deposit balance
-    const totalBookValue = selectedBookStatuses.reduce((sum, bookStatus) => {
-      return sum + (bookStatus.book.price || 0);
-    }, 0);
+    const { data: loanData, error: loanError } = await supabase
+      .from("loantransaction")
+      .select("borrow_type")
+      .eq("loan_transaction_id", loanId)
+      .single();
 
-    if (readerId && totalBookValue > 0) {
-      const { data: currentCard, error: cardError } = await supabase
-        .from("librarycard")
-        .select("current_deposit_balance")
-        .eq("card_id", readerId)
-        .single();
+    if (loanError) throw loanError;
 
-      if (cardError) throw cardError;
+    if (loanData?.borrow_type == "Mượn về") {
+      const totalBookValue = selectedBookStatuses.reduce((sum, bookStatus) => {
+        return sum + (bookStatus.book.price || 0);
+      }, 0);
 
-      const newDepositBalance =
-        (currentCard?.current_deposit_balance || 0) + totalBookValue;
+      if (readerId && totalBookValue > 0) {
+        const { data: currentCard, error: cardError } = await supabase
+          .from("librarycard")
+          .select("current_deposit_balance")
+          .eq("card_id", readerId)
+          .single();
 
-      const { error: updateDepositError } = await supabase
-        .from("librarycard")
-        .update({ current_deposit_balance: newDepositBalance })
-        .eq("card_id", readerId);
+        if (cardError) throw cardError;
 
-      if (updateDepositError) throw updateDepositError;
+        const newDepositBalance =
+          (currentCard?.current_deposit_balance || 0) + totalBookValue;
+
+        const { error: updateDepositError } = await supabase
+          .from("librarycard")
+          .update({ current_deposit_balance: newDepositBalance })
+          .eq("card_id", readerId);
+
+        if (updateDepositError) throw updateDepositError;
+      }
     }
 
     return NextResponse.json({

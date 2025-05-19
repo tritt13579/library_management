@@ -221,6 +221,10 @@ const StaffHomePage = () => {
     fetchLoanTransactions();
   };
 
+  const handleLoanStatusChanged = () => {
+    fetchLoanTransactions();
+  };
+
   if (error) {
     return (
       <div className="flex h-96 flex-col items-center justify-center">
@@ -266,6 +270,7 @@ const StaffHomePage = () => {
             <LoanManagementTab
               loanTransactions={loanTransactions}
               onLoanCreated={handleLoanCreated}
+              onLoanStatusChanged={handleLoanStatusChanged}
             />
           </TabsContent>
 

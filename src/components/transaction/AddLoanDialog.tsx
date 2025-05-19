@@ -83,6 +83,7 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   const [selectedBooks, setSelectedBooks] = useState<BookCopy[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<BookCopy[]>([]);
+  const [borrowType, setBorrowType] = useState("Mượn về");
 
   const supabase = supabaseClient();
 
@@ -92,6 +93,16 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
       borrow_type: "Mượn về",
     },
   });
+
+  // Watch cho sự thay đổi của borrowType từ form
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "borrow_type") {
+        setBorrowType(value.borrow_type || "Mượn về");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -309,6 +320,7 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
 
       form.reset();
       setSelectedBooks([]);
+      setBorrowType("Mượn về");
 
       onOpenChange(false);
 
@@ -448,10 +460,11 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                           {" "}
                           {book.condition.condition_name}
                         </span>{" "}
-                        -
-                        <span className="text-sm font-semibold">
-                          Giá: {book.price.toLocaleString()}đ
-                        </span>
+                        {borrowType !== "Đọc tại chỗ" && (
+                          <span className="text-sm font-semibold">
+                            Giá: {book.price.toLocaleString()}đ
+                          </span>
+                        )}
                       </span>
                       <Button
                         size="sm"
@@ -491,9 +504,11 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                             <Badge variant="outline">
                               {book.condition.condition_name}
                             </Badge>
-                            <Badge variant="outline">
-                              Giá: {book.price.toLocaleString()}đ
-                            </Badge>
+                            {borrowType !== "Đọc tại chỗ" && (
+                              <Badge variant="outline">
+                                Giá: {book.price.toLocaleString()}đ
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <Button
@@ -505,15 +520,29 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                         </Button>
                       </div>
                     ))}
-                    <div className="mt-2 text-right">
-                      <p className="text-sm font-medium">
-                        Tổng tiền đặt cọc:{" "}
-                        {selectedBooks
-                          .reduce((sum, book) => sum + book.price, 0)
-                          .toLocaleString()}
-                        đ
-                      </p>
-                    </div>
+
+                    {/* Hiển thị tổng tiền đặt cọc chỉ khi là Mượn về */}
+                    {borrowType !== "Đọc tại chỗ" && (
+                      <div className="mt-2 text-right">
+                        <p className="text-sm font-medium">
+                          Tổng tiền đặt cọc:{" "}
+                          {selectedBooks
+                            .reduce((sum, book) => sum + book.price, 0)
+                            .toLocaleString()}
+                          đ
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Hiển thị thông báo khi là Đọc tại chỗ */}
+                    {borrowType === "Đọc tại chỗ" && (
+                      <div className="mt-2 rounded-md border border-border bg-muted p-3 text-muted-foreground">
+                        <p className="text-sm">
+                          Đọc tại chỗ: Không cần đặt cọc và sách phải được trả
+                          trong ngày.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
