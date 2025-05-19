@@ -1,4 +1,3 @@
-// app/api/loan-transactions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/admin";
 
@@ -151,39 +150,39 @@ export async function POST(req: NextRequest) {
       0,
     );
 
-    // 4. Kiểm tra số dư tiền đặt cọc
-    if (cardData.current_deposit_balance < totalBookValue) {
-      return NextResponse.json(
-        {
-          error: `Số dư tiền đặt cọc không đủ. Hiện tại: ${cardData.current_deposit_balance}, Cần: ${totalBookValue}`,
-        },
-        { status: 400 },
-      );
+    // Lấy thời gian mượn từ cài đặt hệ thống nếu là "Mượn về"
+    let loanPeriodDays = 0;
+    if (borrowType === "Mượn về") {
+      const { data: loanPeriodSettingData, error: loanPeriodSettingError } =
+        await supabaseAdmin
+          .from("systemsetting")
+          .select("setting_value")
+          .eq("setting_name", "Thời gian mượn")
+          .single();
+
+      if (loanPeriodSettingError || !loanPeriodSettingData) {
+        return NextResponse.json(
+          { error: "Không tìm thấy cài đặt thời gian mượn" },
+          { status: 500 },
+        );
+      }
+
+      loanPeriodDays = parseInt(loanPeriodSettingData.setting_value);
     }
-
-    // Lấy thời gian mượn từ cài đặt hệ thống
-    const { data: loanPeriodSettingData, error: loanPeriodSettingError } =
-      await supabaseAdmin
-        .from("systemsetting")
-        .select("setting_value")
-        .eq("setting_name", "Thời gian mượn")
-        .single();
-
-    if (loanPeriodSettingError || !loanPeriodSettingData) {
-      return NextResponse.json(
-        { error: "Không tìm thấy cài đặt thời gian mượn" },
-        { status: 500 },
-      );
-    }
-
-    const loanPeriodDays = parseInt(loanPeriodSettingData.setting_value);
 
     // Tạo giao dịch mượn
     const transactionDate = new Date();
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + loanPeriodDays);
+    let dueDate = new Date();
 
-    // Bắt đầu giao dịch SupabaseAdminsupabaseAdmin
+    if (borrowType === "Đọc tại chỗ") {
+      // Nếu là đọc tại chỗ, dueDate là cùng ngày
+      dueDate = transactionDate;
+    } else {
+      // Nếu là mượn về, thêm số ngày theo quy định
+      dueDate.setDate(dueDate.getDate() + loanPeriodDays);
+    }
+
+    // Bắt đầu giao dịch
     const { data: loanTransaction, error: loanTransactionError } =
       await supabaseAdmin
         .from("loantransaction")
@@ -236,32 +235,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Cập nhật số dư tiền đặt cọc
-    const newDepositBalance = cardData.current_deposit_balance - totalBookValue;
-    const { error: updateCardError } = await supabaseAdmin
-      .from("librarycard")
-      .update({ current_deposit_balance: newDepositBalance })
-      .eq("card_id", cardId);
+    // Chỉ cập nhật số dư tiền đặt cọc nếu là "Mượn về"
+    let newDepositBalance = cardData.current_deposit_balance;
 
-    if (updateCardError) {
-      // Nếu xảy ra lỗi, cần rollback các bước trước đó
-      await supabaseAdmin
-        .from("loandetail")
-        .delete()
-        .eq("loan_transaction_id", loanTransaction.loan_transaction_id);
+    if (borrowType == "Mượn về") {
+      // 4. Kiểm tra số dư tiền đặt cọc nếu là mượn về
+      if (cardData.current_deposit_balance < totalBookValue) {
+        return NextResponse.json(
+          {
+            error: `Số dư tiền đặt cọc không đủ. Hiện tại: ${cardData.current_deposit_balance}, Cần: ${totalBookValue}`,
+          },
+          { status: 400 },
+        );
+      }
 
-      await supabaseAdmin
-        .from("loantransaction")
-        .delete()
-        .eq("loan_transaction_id", loanTransaction.loan_transaction_id);
+      // 5. Cập nhật số dư tiền đặt cọc
+      newDepositBalance = cardData.current_deposit_balance - totalBookValue;
+      const { error: updateCardError } = await supabaseAdmin
+        .from("librarycard")
+        .update({ current_deposit_balance: newDepositBalance })
+        .eq("card_id", cardId);
 
-      return NextResponse.json(
-        {
-          error: "Lỗi khi cập nhật số dư tiền đặt cọc",
-          details: updateCardError,
-        },
-        { status: 500 },
-      );
+      if (updateCardError) {
+        // Nếu xảy ra lỗi, cần rollback các bước trước đó
+        await supabaseAdmin
+          .from("loandetail")
+          .delete()
+          .eq("loan_transaction_id", loanTransaction.loan_transaction_id);
+
+        await supabaseAdmin
+          .from("loantransaction")
+          .delete()
+          .eq("loan_transaction_id", loanTransaction.loan_transaction_id);
+
+        return NextResponse.json(
+          {
+            error: "Lỗi khi cập nhật số dư tiền đặt cọc",
+            details: updateCardError,
+          },
+          { status: 500 },
+        );
+      }
     }
 
     // Trả về kết quả thành công
