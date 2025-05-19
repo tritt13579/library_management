@@ -37,7 +37,9 @@ const BookTitleDetail = ({
   const [deletingCopyId, setDeletingCopyId] = useState<number | null>(null);
 
   const [confirmDeleteBookOpen, setConfirmDeleteBookOpen] = useState(false);
-  const [confirmDeleteCopyId, setConfirmDeleteCopyId] = useState<number | null>(null);
+  const [confirmDeleteCopyId, setConfirmDeleteCopyId] = useState<number | null>(
+    null,
+  );
 
   if (!book) return null;
 
@@ -56,13 +58,16 @@ const BookTitleDetail = ({
         `/api/book/delete?book_title_id=${book.book_title_id}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       const data = await res.json();
 
       if (!res.ok) {
-        toast({ title: data.error || "Không thể xóa, vui lòng thử lại.", variant: "destructive" });
+        toast({
+          title: data.error || "Không thể xóa, vui lòng thử lại.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -90,7 +95,10 @@ const BookTitleDetail = ({
       const result = await res.json();
 
       if (!res.ok) {
-        toast({ title: result.error || "Xóa bản sao thất bại", variant: "destructive" });
+        toast({
+          title: result.error || "Xóa bản sao thất bại",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -109,11 +117,11 @@ const BookTitleDetail = ({
   return (
     <>
       <Dialog open={true} onOpenChange={onClose}>
-        <DialogContent className="max-w-md lg:max-w-4xl max-h-full md:max-h-[90vh] sm:max-w-xl">
+        <DialogContent className="max-h-full max-w-md sm:max-w-xl md:max-h-[90vh] lg:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Chi tiết sách</DialogTitle>
           </DialogHeader>
-          <div className="flex w-full flex-col lg:flex-row min-h-0">
+          <div className="flex min-h-0 w-full flex-col lg:flex-row">
             {selectedCopy ? (
               <BookCopyDetail
                 bookTitle={book}
@@ -124,27 +132,56 @@ const BookTitleDetail = ({
               />
             ) : (
               <>
-                <div className="mb-2 w-full pr-2 lg:mb-0 lg:w-2/3 overflow-y-auto max-h-[75vh]">
-                  <h2 className="text-3xl font-semibold text-primary">{book.title}</h2>
+                <div className="mb-2 max-h-[75vh] w-full overflow-y-auto pr-2 lg:mb-0 lg:w-2/3">
+                  <h2 className="text-3xl font-semibold text-primary">
+                    {book.title}
+                  </h2>
                   <p className="mt-2 text-lg text-muted-foreground">
-                    Tác giả: {book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
+                    Tác giả:{" "}
+                    {book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
                   </p>
                   <div className="mt-6 space-y-3 text-muted-foreground">
-                    <p><strong className="text-primary">Thể loại:</strong> {book.category?.category_name ?? "Không rõ"}</p>
-                    <p><strong className="text-primary">Năm xuất bản:</strong> {book.publication_year ?? "N/A"}</p>
-                    <p><strong className="text-primary">ISBN:</strong> {book.isbn ?? "N/A"}</p>
-                    <p><strong className="text-primary">Kệ sách:</strong> {book.shelf?.location ?? "N/A"}</p>
-                    <p><strong className="text-primary">Ngôn ngữ:</strong> {book.language ?? "Tiếng Việt"}</p>
-                    <p><strong className="text-primary">Nhà xuất bản:</strong> {book.publisher?.publisher_name ?? "Không rõ"}</p>
-                    <p><strong className="text-primary">Lần sửa đổi:</strong> {book.edition ?? "N/A"}</p>
+                    <p>
+                      <strong className="text-primary">Thể loại:</strong>{" "}
+                      {book.category?.category_name ?? "Không rõ"}
+                    </p>
+                    <p>
+                      <strong className="text-primary">Năm xuất bản:</strong>{" "}
+                      {book.publication_year ?? "N/A"}
+                    </p>
+                    <p>
+                      <strong className="text-primary">ISBN:</strong>{" "}
+                      {book.isbn ?? "N/A"}
+                    </p>
+                    <p>
+                      <strong className="text-primary">Kệ sách:</strong>{" "}
+                      {book.shelf?.location ?? "N/A"}
+                    </p>
+                    <p>
+                      <strong className="text-primary">Ngôn ngữ:</strong>{" "}
+                      {book.language ?? "Tiếng Việt"}
+                    </p>
+                    <p>
+                      <strong className="text-primary">Nhà xuất bản:</strong>{" "}
+                      {book.publisher?.publisher_name ?? "Không rõ"}
+                    </p>
+                    <p>
+                      <strong className="text-primary">Lần sửa đổi:</strong>{" "}
+                      {book.edition ?? "N/A"}
+                    </p>
                   </div>
                   <div className="mt-6">
                     <strong className="text-primary">Mô tả:</strong>
-                    <p className="mt-2 text-muted-foreground">{book.description ?? "Không có mô tả."}</p>
+                    <p className="mt-2 text-muted-foreground">
+                      {book.description ?? "Không có mô tả."}
+                    </p>
                   </div>
 
                   <div className="mt-6">
-                    <div className="flex cursor-pointer items-center justify-between" onClick={() => setShowCopies(!showCopies)}>
+                    <div
+                      className="flex cursor-pointer items-center justify-between"
+                      onClick={() => setShowCopies(!showCopies)}
+                    >
                       <div className="flex items-center">
                         {showCopies ? (
                           <ChevronDownIcon className="h-5 w-5 text-primary" />
@@ -156,7 +193,11 @@ const BookTitleDetail = ({
                         </h3>
                       </div>
                       {showCopies && (
-                        <Button variant="outline" className="text-sm" onClick={() => setActiveModal("copy")}>
+                        <Button
+                          variant="outline"
+                          className="text-sm"
+                          onClick={() => setActiveModal("copy")}
+                        >
                           + Thêm bản sao
                         </Button>
                       )}
@@ -165,24 +206,46 @@ const BookTitleDetail = ({
                     {showCopies && book.bookcopy?.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {book.bookcopy.map((copy: any) => (
-                          <div key={copy.copy_id} className="rounded-md border p-3 hover:bg-muted group">
-                            <div className="flex justify-between items-start">
-                              <div className="cursor-pointer" onClick={() => handleCopyClick(copy)}>
-                                <p className="font-medium text-primary">Mã bản sao: {copy.copy_id}</p>
-                                <p className="text-sm text-muted-foreground">Trạng thái: {copy.condition?.condition_name || "Không rõ"}</p>
+                          <div
+                            key={copy.copy_id}
+                            className="group rounded-md border p-3 hover:bg-muted"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div
+                                className="cursor-pointer"
+                                onClick={() => handleCopyClick(copy)}
+                              >
+                                <p className="font-medium text-primary">
+                                  Mã bản sao: {copy.copy_id}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Tình trạng:{" "}
+                                  {copy.condition?.condition_name || "Không rõ"}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Trạng thái:{" "}
+                                  {copy.availability_status || "Không rõ"}
+                                </p>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                  Ngày nhập: {new Date(copy.acquisition_date).toLocaleDateString("vi-VN")}
+                                  Ngày nhập:{" "}
+                                  {new Date(
+                                    copy.acquisition_date,
+                                  ).toLocaleDateString("vi-VN")}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                   Giá: {copy.price.toLocaleString("vi-VN")} VNĐ
                                 </p>
                               </div>
                               <button
-                                className="text-red-600 text-sm hover:underline ml-4"
+                                className="ml-4 text-sm text-red-600 hover:underline"
                                 disabled={deletingCopyId === copy.copy_id}
-                                onClick={() => setConfirmDeleteCopyId(copy.copy_id)}
+                                onClick={() =>
+                                  setConfirmDeleteCopyId(copy.copy_id)
+                                }
                               >
-                                {deletingCopyId === copy.copy_id ? "Đang xóa..." : "Xóa"}
+                                {deletingCopyId === copy.copy_id
+                                  ? "Đang xóa..."
+                                  : "Xóa"}
                               </button>
                             </div>
                           </div>
@@ -190,11 +253,12 @@ const BookTitleDetail = ({
                       </div>
                     )}
 
-                    {showCopies && (!book.bookcopy || book.bookcopy.length === 0) && (
-                      <p className="mt-2 text-sm italic text-muted-foreground">
-                        Không có bản sao nào
-                      </p>
-                    )}
+                    {showCopies &&
+                      (!book.bookcopy || book.bookcopy.length === 0) && (
+                        <p className="mt-2 text-sm italic text-muted-foreground">
+                          Không có bản sao nào
+                        </p>
+                      )}
                   </div>
 
                   <div className="mt-6 flex space-x-3">
@@ -216,7 +280,7 @@ const BookTitleDetail = ({
                     </Button>
                   </div>
                 </div>
-                <div className="hidden lg:block w-full lg:w-1/2">
+                <div className="hidden w-full lg:block lg:w-1/2">
                   <img
                     src={book.cover_image || "/api/placeholder/400/600"}
                     alt={`Ảnh bìa ${book.title}`}
@@ -230,14 +294,26 @@ const BookTitleDetail = ({
       </Dialog>
 
       {/* Modal xác nhận xóa sách */}
-      <Dialog open={confirmDeleteBookOpen} onOpenChange={setConfirmDeleteBookOpen}>
+      <Dialog
+        open={confirmDeleteBookOpen}
+        onOpenChange={setConfirmDeleteBookOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Bạn có chắc chắn muốn xóa sách này?</DialogTitle>
           </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setConfirmDeleteBookOpen(false)}>Hủy</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteBookOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
               {isDeleting ? "Đang xóa..." : "Xóa"}
             </Button>
           </div>
@@ -245,16 +321,26 @@ const BookTitleDetail = ({
       </Dialog>
 
       {/* Modal xác nhận xóa bản sao */}
-      <Dialog open={confirmDeleteCopyId !== null} onOpenChange={() => setConfirmDeleteCopyId(null)}>
+      <Dialog
+        open={confirmDeleteCopyId !== null}
+        onOpenChange={() => setConfirmDeleteCopyId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Bạn có chắc chắn muốn xóa bản sao này?</DialogTitle>
           </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setConfirmDeleteCopyId(null)}>Hủy</Button>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteCopyId(null)}
+            >
+              Hủy
+            </Button>
             <Button
               variant="destructive"
-              onClick={() => confirmDeleteCopyId && handleDeleteCopy(confirmDeleteCopyId)}
+              onClick={() =>
+                confirmDeleteCopyId && handleDeleteCopy(confirmDeleteCopyId)
+              }
               disabled={deletingCopyId === confirmDeleteCopyId}
             >
               {deletingCopyId === confirmDeleteCopyId ? "Đang xóa..." : "Xóa"}
