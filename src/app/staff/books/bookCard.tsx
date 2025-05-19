@@ -15,17 +15,19 @@ const BookCard: React.FC<BookCardProps> = ({
   category,
 }) => {
   return (
-    <Link href="">
-      <div className="flex h-[400px] w-full cursor-pointer flex-col rounded-xl bg-white shadow transition hover:shadow-lg">
-        <div className="h-72 w-full overflow-hidden rounded-t-xl">
-          <img src={image} alt={title} className="h-full w-full object-cover" />
+    <Link href="#" passHref>
+      <div className="flex flex-col rounded-2xl overflow-hidden shadow hover:shadow-lg transition duration-300 bg-white">
+        <div className="relative w-full h-64 overflow-hidden">
+          <img
+            src={image || "/default-cover.jpg"}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          />
         </div>
-        <div className="flex flex-grow flex-col p-4">
-          <h3 className="line-clamp-2 text-base font-semibold text-[#0071BC]">
-            {title}
-          </h3>
-          <p className="mt-1 line-clamp-1 text-sm text-gray-600">{author}</p>
-          <p className="mt-auto text-xs italic text-gray-400">{category}</p>
+        <div className="flex flex-col gap-1 p-4 flex-1">
+          <p className="text-xs text-gray-500 italic">{category}</p>
+          <h3 className="text-base font-semibold text-gray-800 line-clamp-2">{title}</h3>
+          <p className="text-sm text-gray-600 line-clamp-1">{author}</p>
         </div>
       </div>
     </Link>
