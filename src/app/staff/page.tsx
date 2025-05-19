@@ -136,10 +136,11 @@ const StaffHomePage = () => {
               const bookTitleId = detail.bookcopy?.booktitle?.book_title_id;
               return {
                 id: detail.bookcopy?.copy_id,
-                title: detail.bookcopy?.booktitle?.title || "Unknown Title",
-                author: bookAuthorsMap.get(bookTitleId!) || "Unknown Author",
+                title: detail.bookcopy?.booktitle?.title || "Không rõ tiêu đề",
+                author: bookAuthorsMap.get(bookTitleId!) || "Không rõ tác giả",
                 condition:
-                  detail.bookcopy?.condition?.condition_name || "Unknown",
+                  detail.bookcopy?.condition?.condition_name ||
+                  "Không rõ tình trạng",
                 returnDate: detail.return_date,
               };
             }) || [];

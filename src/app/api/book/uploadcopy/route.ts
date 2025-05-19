@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "Không có file được tải lên" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Không có file được tải lên" },
+        { status: 400 },
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -41,6 +44,7 @@ export async function POST(req: NextRequest) {
             acquisition_date,
             price,
             condition_id,
+            availability_status: "Có sẵn",
           },
         ])
         .select()
@@ -61,6 +65,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Lỗi hệ thống:", error);
-    return NextResponse.json({ error: "Lỗi khi xử lý file Excel" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Lỗi khi xử lý file Excel" },
+      { status: 500 },
+    );
   }
 }

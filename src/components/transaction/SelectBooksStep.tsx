@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { Switch } from "@/components/ui/switch";
+
 interface SelectBooksStepProps {
   booksStatus: BookReturnStatus[];
   conditions: Condition[];
@@ -30,6 +32,7 @@ interface SelectBooksStepProps {
   handleToggleSelectAll: () => void;
   handleToggleSelect: (index: number) => void;
   handleConditionChange: (index: number, value: string) => void;
+  handleAvailabilityStatusChange: (index: number, value: string) => void;
 }
 
 export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
@@ -39,6 +42,7 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
   handleToggleSelectAll,
   handleToggleSelect,
   handleConditionChange,
+  handleAvailabilityStatusChange,
 }) => {
   if (booksStatus.length === 0) {
     return (
@@ -53,6 +57,12 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
       </div>
     );
   }
+
+  // Helper to get condition name by id
+  const getConditionNameById = (id: number): string => {
+    const condition = conditions.find((c) => c.condition_id === id);
+    return condition ? condition.condition_name : "";
+  };
 
   return (
     <div className="space-y-4">
@@ -73,6 +83,7 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
             <TableHead>Tác giả</TableHead>
             <TableHead>Tình trạng hiện tại</TableHead>
             <TableHead>Cập nhật tình trạng</TableHead>
+            <TableHead>Thất lạc</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -94,7 +105,11 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
                   disabled={!bookStatus.isSelected}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chọn tình trạng" />
+                    <SelectValue>
+                      {getConditionNameById(
+                        bookStatus.newCondition || bookStatus.book.condition_id,
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {conditions.map((condition) => (
@@ -110,6 +125,25 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={bookStatus.availabilityStatus === "Thất lạc"}
+                    onCheckedChange={(checked) =>
+                      handleAvailabilityStatusChange(
+                        index,
+                        checked ? "Thất lạc" : "Có sẵn",
+                      )
+                    }
+                    disabled={!bookStatus.isSelected}
+                  />
+                  <Label>
+                    {bookStatus.availabilityStatus === "Thất lạc"
+                      ? "Thất lạc"
+                      : "Có sẵn"}
+                  </Label>
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
               copy_id,
               price,
               condition_id,
+              availability_status,
               booktitle(
                 title
               )
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
             author: book.author || "Unknown",
             condition: book.condition || "Unknown",
             condition_id: bookcopy?.condition_id || 1,
+            availability_status: bookcopy?.availability_status || "Không rõ",
             price: bookcopy?.price || 0,
             copy_id: loanDetail.copy_id || 0,
             loan_detail_id: loanDetail.loan_detail_id || 0,

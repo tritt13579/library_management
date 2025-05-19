@@ -49,6 +49,7 @@ interface BookCopy {
   copy_id: number;
   book_title_id: number;
   price: number;
+  availability_status: string;
   booktitle: {
     title: string;
   };
@@ -63,11 +64,14 @@ interface AddLoanDialogProps {
   onLoanCreated: () => void;
 }
 
+// Tối ưu hàm chuẩn hóa chuỗi tiếng Việt
 const normalizeString = (str: string): string => {
   return str
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .replace(/[\u0300-\u036f]/g, "") // Loại bỏ dấu
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " "); // Chuẩn hóa khoảng trắng
 };
 
 const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
@@ -107,6 +111,7 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch thẻ thư viện đang hoạt động
         const { data: cardData, error: cardError } = await supabase
           .from("librarycard")
           .select(
@@ -140,50 +145,15 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
 
         setCards(processedCards);
 
-        const { data: loanedCopies, error: loanedError } = await supabase
-          .from("loandetail")
+        // Fetch sách có sẵn với trạng thái "Có sẵn" và không bị hư hại
+        const { data: bookData, error: bookError } = await supabase
+          .from("bookcopy")
           .select(
             `
             copy_id,
-            loantransaction:loan_transaction_id (
-              loan_status
-            )
-          `,
-          )
-          .is("return_date", null)
-          .eq("loantransaction.loan_status", "Đang mượn");
-
-        if (loanedError) {
-          console.error("Loaned books fetch error:", loanedError);
-          throw loanedError;
-        }
-
-        const loanedCopyIds = loanedCopies
-          ? loanedCopies.map((item) => item.copy_id)
-          : [];
-
-        // Fetch conditions to get the condition ID for "Bị hư hại"
-        const { data: conditionData, error: conditionError } = await supabase
-          .from("condition")
-          .select("condition_id, condition_name")
-          .eq("condition_name", "Bị hư hại");
-
-        if (conditionError) {
-          console.error("Condition fetch error:", conditionError);
-          throw conditionError;
-        }
-
-        // Get IDs of damaged conditions to exclude
-        const damagedConditionIds = conditionData
-          ? conditionData.map((condition) => condition.condition_id)
-          : [];
-
-        const { data: bookData, error: bookError } = await supabase.from(
-          "bookcopy",
-        ).select(`
-            copy_id,
             book_title_id,
             price,
+            availability_status,
             condition_id,
             booktitle:book_title_id (
               title
@@ -191,7 +161,10 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
             condition:condition_id (
               condition_name
             )
-          `);
+          `,
+          )
+          .eq("availability_status", "Có sẵn") // Chỉ lấy sách có sẵn
+          .neq("condition.condition_name", "Bị hư hại"); // Loại trừ sách bị hư hại
 
         if (bookError) {
           console.error("Book fetch error:", bookError);
@@ -199,24 +172,15 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
         }
 
         const availableBookCopies = bookData
-          ? bookData
-              .filter((book) => !loanedCopyIds.includes(book.copy_id))
-              // Filter out books with "Bị hư hại" condition
-              .filter((book) => {
-                // Get the condition ID of this book
-                const bookConditionId = book.condition_id;
-                // Check if this book's condition ID is not in the list of damaged condition IDs
-                return !damagedConditionIds.includes(bookConditionId);
-              })
-              .map((book) => ({
-                ...book,
-                booktitle: Array.isArray(book.booktitle)
-                  ? book.booktitle[0] || { title: "Không có tiêu đề" }
-                  : book.booktitle || { title: "Không có tiêu đề" },
-                condition: Array.isArray(book.condition)
-                  ? book.condition[0] || { condition_name: "Không xác định" }
-                  : book.condition || { condition_name: "Không xác định" },
-              }))
+          ? bookData.map((book) => ({
+              ...book,
+              booktitle: Array.isArray(book.booktitle)
+                ? book.booktitle[0] || { title: "Không có tiêu đề" }
+                : book.booktitle || { title: "Không có tiêu đề" },
+              condition: Array.isArray(book.condition)
+                ? book.condition[0] || { condition_name: "Không xác định" }
+                : book.condition || { condition_name: "Không xác định" },
+            }))
           : [];
 
         setAvailableBooks(availableBookCopies);
@@ -235,20 +199,28 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
     }
   }, [open]);
 
+  // Tối ưu tìm kiếm Tiếng Việt
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setSearchResults([]);
       return;
     }
 
-    const normalizedSearchTerm = normalizeString(searchTerm.trim());
+    const normalizedSearchTerm = normalizeString(searchTerm);
     const filteredBooks = availableBooks.filter((book) => {
       const normalizedTitle = normalizeString(book.booktitle.title);
+
+      // Kiểm tra đã chọn chưa
+      const isAlreadySelected = selectedBooks.some(
+        (selected) => selected.copy_id === book.copy_id,
+      );
+
+      // Tìm kiếm chuỗi con và không hiển thị sách đã chọn
       return (
-        normalizedTitle.includes(normalizedSearchTerm) &&
-        !selectedBooks.some((selected) => selected.copy_id === book.copy_id)
+        normalizedTitle.includes(normalizedSearchTerm) && !isAlreadySelected
       );
     });
+
     setSearchResults(filteredBooks);
   }, [searchTerm, availableBooks, selectedBooks]);
 
@@ -285,6 +257,7 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
     try {
       const bookCopyIds = selectedBooks.map((book) => book.copy_id);
 
+      // Gọi API tạo giao dịch mượn
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/loan-transactions/add`,
         {
@@ -462,6 +435,7 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
                         </span>{" "}
                         {borrowType !== "Đọc tại chỗ" && (
                           <span className="text-sm font-semibold">
+                            {" "}
                             Giá: {book.price.toLocaleString()}đ
                           </span>
                         )}

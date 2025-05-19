@@ -10,7 +10,7 @@ const BookCopyDetail = ({
   bookCopy,
   onBack,
   onSuccess,
-  onClose
+  onClose,
 }: {
   bookTitle: any;
   bookCopy: any;
@@ -20,7 +20,7 @@ const BookCopyDetail = ({
 }) => {
   const [isConditionOpen, setIsConditionOpen] = useState(false);
   const [conditions, setConditions] = useState<{ id: string; name: string }[]>(
-    []
+    [],
   );
   const [currentCopy, setCurrentCopy] = useState(bookCopy);
 
@@ -36,7 +36,7 @@ const BookCopyDetail = ({
           data.map((item) => ({
             id: item.condition_id.toString(),
             name: item.condition_name,
-          }))
+          })),
         );
       }
     };
@@ -66,14 +66,14 @@ const BookCopyDetail = ({
         </div>
 
         <div className="lg:col-span-2">
-          <h2 className="text-2xl font-semibold text-primary mb-2">
+          <h2 className="mb-2 text-2xl font-semibold text-primary">
             {bookTitle.title}{" "}
             <span className="text-base text-muted-foreground">
               - Bản sao #{currentCopy.copy_id}
             </span>
           </h2>
 
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="mt-4 flex flex-col gap-4">
             <div className="rounded-md bg-accent p-4 text-accent-foreground">
               <h3 className="mb-3 text-lg font-medium text-primary">
                 Thông tin bản sao
@@ -88,9 +88,13 @@ const BookCopyDetail = ({
                   {currentCopy.condition?.condition_name || "Không rõ"}
                 </li>
                 <li>
+                  <strong className="text-primary">Trạng thái:</strong>{" "}
+                  {currentCopy.availability_status || "Không rõ"}
+                </li>
+                <li>
                   <strong className="text-primary">Ngày nhập:</strong>{" "}
                   {new Date(currentCopy.acquisition_date).toLocaleDateString(
-                    "vi-VN"
+                    "vi-VN",
                   )}
                 </li>
                 <li>
@@ -99,7 +103,7 @@ const BookCopyDetail = ({
                 </li>
               </ul>
               <button
-                className="mt-2 rounded bg-background px-4 py-1.5 text-primary text-sm"
+                className="mt-2 rounded bg-background px-4 py-1.5 text-sm text-primary"
                 onClick={() => setIsConditionOpen(true)}
               >
                 Cập nhật tình trạng
@@ -113,7 +117,8 @@ const BookCopyDetail = ({
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>
                   <strong className="text-primary">Tác giả:</strong>{" "}
-                  {bookTitle.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"}
+                  {bookTitle.iswrittenby?.[0]?.author?.author_name ??
+                    "Không rõ"}
                 </li>
                 <li>
                   <strong className="text-primary">Thể loại:</strong>{" "}
@@ -144,14 +149,14 @@ const BookCopyDetail = ({
         conditions={conditions}
         copyId={currentCopy.copy_id}
         onSuccess={(updatedCondition) => {
-          setIsConditionOpen(false); 
+          setIsConditionOpen(false);
           if (updatedCondition) {
             setCurrentCopy((prev: typeof bookCopy) => ({
               ...prev,
               condition: updatedCondition,
             }));
           }
-          onSuccess?.(); 
+          onSuccess?.();
           onBack();
           onClose?.();
         }}
