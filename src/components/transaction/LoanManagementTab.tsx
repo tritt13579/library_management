@@ -15,6 +15,7 @@ import { LoanDetailsDialog } from "./LoanDetailsDialog";
 const LoanManagementTab: React.FC<LoanManagementTabProps> = ({
   loanTransactions,
   onLoanCreated,
+  onLoanStatusChanged,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -108,6 +109,7 @@ const LoanManagementTab: React.FC<LoanManagementTabProps> = ({
         dialogOpen={dialogOpen}
         setDialogOpen={setDialogOpen}
         closeDialog={closeDialog}
+        onLoanStatusChanged={onLoanStatusChanged}
       />
     </Card>
   );
