@@ -269,7 +269,7 @@ const StaffPage = () => {
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
-          className="rounded border border-gray-300 px-3 py-1 text-sm text-primary hover:bg-gray-100 disabled:opacity-50"
+          className="rounded border border-gray-300 px-3 py-1 text-sm text-primary hover:bg-gray-400 disabled:opacity-50"
         >
           Trước
         </button>
@@ -280,7 +280,7 @@ const StaffPage = () => {
             className={`rounded border px-3 py-1 text-sm ${
               currentPage === i + 1
                 ? "bg-[#0071BC] text-white"
-                : "border-gray-300 text-gray-700 hover:bg-gray-100"
+                : "border-gray-300 text-gray-700 hover:bg-gray-400"
             }`}
             onClick={() => setCurrentPage(i + 1)}
           >
@@ -293,7 +293,7 @@ const StaffPage = () => {
             setCurrentPage((prev) => Math.min(prev + 1, totalPages))
           }
           disabled={currentPage === totalPages}
-          className="rounded border border-gray-300 px-3 py-1 text-sm text-primary hover:bg-gray-100 disabled:opacity-50"
+          className="rounded border border-gray-300 px-3 py-1 text-sm text-primary hover:bg-gray-400 disabled:opacity-50"
         >
           Tiếp
         </button>

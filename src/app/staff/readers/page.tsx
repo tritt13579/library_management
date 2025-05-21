@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { supabaseClient } from '@/lib/client';
 import {
   Bars3Icon, XMarkIcon, CreditCardIcon,
-  QueueListIcon, CalendarDateRangeIcon
+  QueueListIcon, CalendarDateRangeIcon,
+  NoSymbolIcon
 } from '@heroicons/react/24/solid';
 
 import ReaderFormModal from '@/components/ReaderFormModal';
 import ReaderDetailModal from '@/components/ReaderDetailModel';
 import CardDetailModal from '@/components/CardDetailModel';
 import ExtendCardModal from '@/components/ExtendCardModel';
+import CancelCardModel from '@/components/CancelCardModel';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -34,7 +36,7 @@ const ReadersPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [modals, setModals] = useState({
-    detail: false, card: false, extend: false, create: false, edit: false,
+    detail: false, card: false, extend: false, create: false, edit: false, cancel: false,
   });
 
   const [readers, setReaders] = useState<any[]>([]);
@@ -91,27 +93,13 @@ const ReadersPage = () => {
     const fullName = `${r.first_name} ${r.last_name}`.toLowerCase();
     const matchName = fullName.includes(searchTerm.toLowerCase());
 
-    const expiry = card?.expiry_date ? new Date(card.expiry_date) : null;
-
-    let isExpired = false;
-    let isValid = false;
-    let isCanceled = false;
-
-    if (expiry) {
-      const now = new Date();
-      isExpired = expiry < now;
-      isValid = expiry >= now;
-
-      const extendedDate = new Date(expiry);
-      extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
-      isCanceled = now > extendedDate;
-    }
+    const status = card?.card_status || 'Chưa đăng ký';
 
     const matchStatus =
       cardStatus === 'Tất cả' ||
-      (cardStatus === 'Hoạt động' && isValid) ||
-      (cardStatus === 'Chưa gia hạn' && isExpired && !isCanceled) ||
-      (cardStatus === 'Đã hủy' && isCanceled);
+      (cardStatus === 'Hoạt động' && status === 'Hoạt động') ||
+      (cardStatus === 'Chưa gia hạn' && status === 'Chưa gia hạn') ||
+      (cardStatus === 'Đã hủy' && status === 'Đã hủy');
 
     return matchName && matchStatus;
   });
@@ -123,12 +111,12 @@ const ReadersPage = () => {
   );
 
   const openModal = (type: keyof typeof modals, reader?: any) => {
-    setModals({ detail: false, card: false, extend: false, create: false, edit: false, [type]: true });
+    setModals({ detail: false, card: false, extend: false, create: false, edit: false,  cancel: false, [type]: true });
     setSelectedReader(reader || null);
   };
 
   const closeModals = () => {
-    setModals({ detail: false, card: false, extend: false, create: false, edit: false });
+    setModals({ detail: false, card: false, extend: false, create: false, edit: false, cancel: false, });
   };
 
   return (
@@ -184,15 +172,6 @@ const ReadersPage = () => {
         {paginatedReaders.map((reader, i) => {
           const card = reader.librarycard?.[0];
           const status = card?.card_status || 'Chưa đăng ký';
-          const expiryDate = card?.expiry_date ? new Date(card.expiry_date) : null;
-          const now = new Date();
-          const isExpired = expiryDate && expiryDate < now;
-          let extendedDate = null;
-
-          if (isExpired && expiryDate) {
-            extendedDate = new Date(expiryDate);
-            extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
-          }
 
           return (
             <div
@@ -209,20 +188,12 @@ const ReadersPage = () => {
               <p className="text-center text-sm text-gray-600">{card?.card_type || 'Chưa đăng ký'}</p>
               <p className="text-center text-sm text-gray-500 mt-1">Hạn mức: {card?.depositpackage?.package_amount || 0} VND</p>
 
-              {isExpired ? (
-                <p className={`text-center text-sm font-semibold ${
-                  extendedDate && new Date() > extendedDate ? 'text-gray-500' : 'text-red-600'
-                }`}>
-                  Tình trạng: {
-                    extendedDate && new Date() > extendedDate ? 'Đã hủy' : 'Chưa gia hạn'
-                  }
-                </p>
-              ) : (
-                <p className="text-center text-sm text-green-600 font-semibold">
-                  Tình trạng: {status}
-                </p>
-              )}
-
+              <p className={`text-center text-sm font-semibold ${
+                status === 'Đã hủy' ? 'text-gray-500' :
+                  status === 'Chưa gia hạn' ? 'text-red-600' : 'text-green-600'
+              }`}>
+                Tình trạng: {status}
+              </p>
               <p className="text-center text-sm text-gray-700 mt-2">{reader.address}</p>
             </div>
           );
@@ -246,6 +217,14 @@ const ReadersPage = () => {
       )}
 
       {/* Modals */}
+
+      <CancelCardModel
+        isOpen={modals.cancel}
+        onClose={closeModals}
+        reader={selectedReader}
+        onSuccess={handleSuccess}
+      />
+
       <ExtendCardModal
         isOpen={modals.extend}
         onClose={closeModals}
@@ -257,6 +236,7 @@ const ReadersPage = () => {
         isOpen={modals.card}
         onClose={closeModals}
         onExtend={(reader) => openModal('extend', reader)}
+        onCancel={(reader) => openModal('cancel', reader)}
         reader={selectedReader}
         extendMonths={extendMonths}
       />
@@ -302,7 +282,7 @@ const PageButton = ({ label, onClick, disabled, active }: {
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`rounded border px-3 py-1 text-sm ${active ? 'bg-[#0071BC] text-white' : 'hover:bg-gray-100'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    className={`rounded border px-3 py-1 text-sm ${active ? 'bg-[#0071BC] text-white' : 'hover:bg-gray-400'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
   >
     {label}
   </button>
