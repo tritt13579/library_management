@@ -77,7 +77,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       if (!response.ok) {
         throw new Error(result.error);
       }
-
+      console.log("Conditions:", result.data);
       setConditions(result.data || []);
     } catch (error) {
       console.error("Error fetching conditions:", error);

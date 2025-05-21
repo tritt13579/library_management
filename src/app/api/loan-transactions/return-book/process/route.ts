@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (bookStatus.damageFee > 0) {
-        const fineType = bookStatus.isLost ? "Thất lạc" : "Hư hại";
+        const fineType = bookStatus.isLost ? "Thất lạc" : "Bị hư hại";
         const { error: damageFeeError } = await supabase
           .from("finetransaction")
           .insert({

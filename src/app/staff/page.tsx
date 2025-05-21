@@ -97,7 +97,7 @@ const StaffHomePage = () => {
             )
           `,
         )
-        .order("transaction_date", { ascending: false });
+        .order("loan_transaction_id", { ascending: false });
 
       if (loanError) throw loanError;
 

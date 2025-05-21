@@ -111,22 +111,23 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch thẻ thư viện đang hoạt động
+        // Fetch thẻ thư viện đang hoạt động (unchanged)
         const { data: cardData, error: cardError } = await supabase
           .from("librarycard")
           .select(
             `
-            card_id,
-            card_number,
-            card_status,
-            current_deposit_balance,
-            reader:reader_id (
-              first_name,
-              last_name
-            )
-          `,
+          card_id,
+          card_number,
+          card_status,
+          current_deposit_balance,
+          reader:reader_id (
+            first_name,
+            last_name
+          )
+        `,
           )
           .eq("card_status", "Hoạt động")
+          .eq("card_type", "Thẻ mượn")
           .order("card_id", { ascending: true });
 
         if (cardError) {
@@ -145,42 +146,44 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
 
         setCards(processedCards);
 
-        // Fetch sách có sẵn với trạng thái "Có sẵn" và không bị hư hại
+        // UPDATED: Fetch sách có sẵn
         const { data: bookData, error: bookError } = await supabase
           .from("bookcopy")
           .select(
             `
-            copy_id,
-            book_title_id,
-            price,
-            availability_status,
-            condition_id,
-            booktitle:book_title_id (
-              title
-            ),
-            condition:condition_id (
-              condition_name
-            )
-          `,
+          copy_id,
+          book_title_id,
+          price,
+          availability_status,
+          condition_id,
+          booktitle:book_title_id (
+            title
+          ),
+          condition:condition_id (
+            condition_name
           )
-          .eq("availability_status", "Có sẵn") // Chỉ lấy sách có sẵn
-          .neq("condition.condition_name", "Bị hư hại"); // Loại trừ sách bị hư hại
+        `,
+          )
+          .eq("availability_status", "Có sẵn"); // Chỉ lấy sách có sẵn - removed the broken filter
 
         if (bookError) {
           console.error("Book fetch error:", bookError);
           throw bookError;
         }
 
+        // UPDATED: Process and filter damaged books at the client side
         const availableBookCopies = bookData
-          ? bookData.map((book) => ({
-              ...book,
-              booktitle: Array.isArray(book.booktitle)
-                ? book.booktitle[0] || { title: "Không có tiêu đề" }
-                : book.booktitle || { title: "Không có tiêu đề" },
-              condition: Array.isArray(book.condition)
-                ? book.condition[0] || { condition_name: "Không xác định" }
-                : book.condition || { condition_name: "Không xác định" },
-            }))
+          ? bookData
+              .map((book) => ({
+                ...book,
+                booktitle: Array.isArray(book.booktitle)
+                  ? book.booktitle[0] || { title: "Không có tiêu đề" }
+                  : book.booktitle || { title: "Không có tiêu đề" },
+                condition: Array.isArray(book.condition)
+                  ? book.condition[0] || { condition_name: "Không xác định" }
+                  : book.condition || { condition_name: "Không xác định" },
+              }))
+              .filter((book) => book.condition.condition_name !== "Bị hư hại") // Filter out damaged books
           : [];
 
         setAvailableBooks(availableBookCopies);
