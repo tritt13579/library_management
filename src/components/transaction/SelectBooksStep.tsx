@@ -58,7 +58,6 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
     );
   }
 
-  // Helper to get condition name by id
   const getConditionNameById = (id: number): string => {
     const condition = conditions.find((c) => c.condition_id === id);
     return condition ? condition.condition_name : "";
