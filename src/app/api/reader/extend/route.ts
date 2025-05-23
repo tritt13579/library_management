@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { readerId } = body;
+  const { readerId, paymentMethod} = body; 
 
   if (!readerId) {
     return NextResponse.json({ error: "Thiếu readerId" }, { status: 400 });
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
   const cancelMonths = parseInt(cancelSetting.setting_value);
 
-  // Xác định trạng thái mới dựa vào newExpiryDate và thời gian hiện tại
+  // Xác định trạng thái mới
   const now = new Date();
   let newStatus = "Chưa gia hạn";
 
@@ -83,9 +83,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gia hạn thẻ thất bại" }, { status: 500 });
   }
 
+  // Lấy số tiền từ systemsetting (setting_id = 12)
+  const { data: amountSetting, error: amountError } = await supabaseAdmin
+    .from("systemsetting")
+    .select("setting_value")
+    .eq("setting_id", 12)
+    .single();
+
+  if (amountError || !amountSetting) {
+    console.error(amountError);
+    return NextResponse.json({ error: "Không lấy được số tiền gia hạn" }, { status: 500 });
+  }
+
+  const refundAmount = parseFloat(amountSetting.setting_value.replace(/[^0-9.-]+/g, ""));
+
+  // Tạo giao dịch thanh toán
+  const generateCode = (prefix: string) =>
+    `${prefix}${Math.floor(100000 + Math.random() * 900000)}`;
+
+  const paymentInsert = {
+    reader_id: readerId,
+    reference_type: "deposittransaction",
+    payment_method: paymentMethod,
+    payment_date: new Date().toISOString(),
+    amount: refundAmount,
+    invoice_no: generateCode("INV"),
+    receipt_no: generateCode("RCPT"),
+  };
+
+  const { error: paymentError } = await supabaseAdmin
+    .from("payment")
+    .insert(paymentInsert);
+
+  if (paymentError) {
+    console.error(paymentError);
+    return NextResponse.json({ error: "Không thể tạo giao dịch thanh toán" }, { status: 500 });
+  }
+
   return NextResponse.json({
     success: true,
     new_expiry_date: newExpiryDate.toISOString().split("T")[0],
     new_status: newStatus,
+    amount: refundAmount,
   });
 }

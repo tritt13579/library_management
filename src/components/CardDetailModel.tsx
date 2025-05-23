@@ -8,13 +8,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CalendarDaysIcon } from "@heroicons/react/24/solid";
+import { CalendarDaysIcon, NoSymbolIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
 
 interface CardDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExtend: (reader: any) => void;
+  onCancel: (reader: any) => void;
   extendMonths: number;
   reader: any;
 }
@@ -23,6 +24,7 @@ const CardDetailModal = ({
   isOpen,
   onClose,
   onExtend,
+  onCancel,
   extendMonths,
   reader,
 }: CardDetailModalProps) => {
@@ -31,23 +33,17 @@ const CardDetailModal = ({
   const card = reader.librarycard?.[0];
   const deposit = card?.depositpackage;
 
-  const now = new Date();
-  const expiryDate = card?.expiry_date ? new Date(card.expiry_date) : null;
-
-  const isExpired = expiryDate && expiryDate < now;
-
-  let isCanceled = false;
-
-  if (expiryDate) {
-    const extendedDate = new Date(expiryDate);
-    extendedDate.setMonth(extendedDate.getMonth() + extendMonths);
-    isCanceled = now > extendedDate;
-  }
-
   const getCardStatus = () => {
-    if (isCanceled) return { text: "Đã hủy", className: "text-gray-500 font-semibold" };
-    if (isExpired) return { text: "Chưa gia hạn", className: "text-red-600 font-semibold" };
-    return { text: "Hoạt động", className: "text-green-600 font-semibold" };
+    switch (card?.card_status) {
+      case "Đã hủy":
+        return { text: "Đã hủy", className: "text-gray-500 font-semibold" };
+      case "Chưa gia hạn":
+        return { text: "Chưa gia hạn", className: "text-red-600 font-semibold" };
+      case "Hoạt động":
+        return { text: "Hoạt động", className: "text-green-600 font-semibold" };
+      default:
+        return { text: "Không rõ", className: "text-gray-400 font-semibold" };
+    }
   };
 
   const status = getCardStatus();
@@ -124,6 +120,10 @@ const CardDetailModal = ({
         <div className="mt-4 flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>
             Đóng
+          </Button>
+          <Button type="button" onClick={() => onCancel(reader)} className="gap-2">
+            <NoSymbolIcon className="h-4 w-4" />
+            Hủy thẻ
           </Button>
           <Button onClick={() => onExtend(reader)} className="gap-2">
             <CalendarDaysIcon className="h-4 w-4" />
