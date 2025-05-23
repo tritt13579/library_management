@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import { CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import AddLoanDialog from "./AddLoanDialog";
-
+import AddLoanDialog from "../addloan/AddLoanDialog";
 interface LoanManagementHeaderProps {
   onLoanCreated: () => void;
 }

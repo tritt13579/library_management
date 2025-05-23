@@ -1,8 +1,8 @@
 "use client";
 
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import RoleProtectedLayout from "@/components/RoleProtectedLayout";
-import StaffHeader from "@/components/StaffHeader";
+import StaffHeader from "@/components/layout/StaffHeader";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { usePermissions } from "@/providers/PermissionProvider";
 import { usePathname } from "next/navigation";

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Clock, Loader2 } from "lucide-react";
-import LoanManagementTab from "@/components/transaction/LoanManagementTab";
+import LoanManagementTab from "@/components/transaction/loan/LoanManagementTab";
 import ReservationsTab from "@/components/ReservationsTab";
 import { supabaseClient } from "@/lib/client";
 import {
@@ -159,7 +159,7 @@ const StaffHomePage = () => {
               id: reader?.reader_id,
               cardNumber: loan?.librarycard?.card_number || "Unknown",
               name:
-                `${reader?.first_name || ""} ${reader?.last_name || ""}`.trim() ||
+                `${reader?.last_name || ""} ${reader?.first_name || ""}`.trim() ||
                 "Unknown",
               email: reader?.email || "",
             },
@@ -169,7 +169,7 @@ const StaffHomePage = () => {
             borrowType: loan.borrow_type || "Unknown",
             books: books,
             staffName:
-              `${staff?.first_name || ""} ${staff?.last_name || ""}`.trim() ||
+              `${staff?.last_name || ""} ${staff?.first_name || ""}`.trim() ||
               "Unknown",
           };
         }) || [];
@@ -192,7 +192,7 @@ const StaffHomePage = () => {
               id: reader?.reader_id,
               cardNumber: reservation?.librarycard?.card_number || "Unknown",
               name:
-                `${reader?.first_name || ""} ${reader?.last_name || ""}`.trim() ||
+                `${reader?.last_name || ""} ${reader?.first_name || ""}`.trim() ||
                 "Unknown",
               email: reader?.email || "",
             },

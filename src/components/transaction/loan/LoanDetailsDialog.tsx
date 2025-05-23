@@ -25,8 +25,8 @@ import {
   BookOpen,
 } from "lucide-react";
 
-import { ReturnBookDialog } from "./ReturnBookDialog";
-import { RenewBookDialog } from "./RenewBookDialog";
+import { ReturnBookDialog } from "../return/ReturnBookDialog";
+import { RenewBookDialog } from "../renew-book/renew-book-dialog";
 
 interface LoanDetailsDialogProps {
   selectedLoan: FormattedLoanTransaction | null;
