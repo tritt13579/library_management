@@ -48,12 +48,10 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
     }
   }, [dialogOpen, selectedLoan]);
 
-  // Calculate total fine whenever booksStatus changes
   useEffect(() => {
     calculateTotalFine();
   }, [booksStatus]);
 
-  // Update all books selection
   useEffect(() => {
     updateAllBooksSelection();
   }, [booksStatus]);
@@ -79,7 +77,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       if (!response.ok) {
         throw new Error(result.error);
       }
-
+      console.log("Conditions:", result.data);
       setConditions(result.data || []);
     } catch (error) {
       console.error("Error fetching conditions:", error);
@@ -111,7 +109,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
   const initializeBooksStatus = async () => {
     if (!selectedLoan || !selectedLoan.books) return;
 
-    // Filter books that haven't been returned yet
     const unreturned = selectedLoan.books.filter((book) => !book.returnDate);
 
     if (unreturned.length === 0) {
@@ -144,7 +141,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
         throw new Error(result.error);
       }
 
-      // Calculate late fee for each book
       const booksWithLateFee = result.data.map((bookDetail: any) => {
         let lateFee = 0;
         const today = new Date();
@@ -164,7 +160,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
           isLost: false,
           lateFee: lateFee,
           damageFee: 0,
-          availabilityStatus: "Có sẵn", // Default availability status when returning
+          availabilityStatus: "Có sẵn",
         };
       });
 
@@ -229,7 +225,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
     const conditionId = parseInt(value);
     const bookStatus = booksStatus[index];
 
-    // Validate condition change (can only decrease, not increase)
     if (conditionId < bookStatus.book.condition_id) {
       toast({
         title: "Lỗi",
@@ -240,7 +235,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       return;
     }
 
-    // Calculate damage fee based on condition (damaged = condition_id 3)
     const isDamaged = conditionId === 3;
     const damageFee = isDamaged ? bookStatus.book.price * 0.5 : 0;
 
@@ -261,13 +255,10 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
     const bookStatus = booksStatus[index];
     const isLost = value === "Thất lạc";
 
-    // Calculate damage fee based on availability status
     let damageFee = 0;
     if (isLost) {
-      // Lost book: 100% of book price
       damageFee = bookStatus.book.price;
     } else if (bookStatus.newCondition === 3) {
-      // If the book is not lost but is damaged, keep the damage fee
       damageFee = bookStatus.book.price * 0.5;
     }
 
@@ -338,7 +329,7 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       }
 
       setReceiptNo(result.receiptNumber);
-      setStep(4); // Move to success step
+      setStep(4);
     } catch (error) {
       console.error("Error processing return:", error);
       toast({
@@ -394,7 +385,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Step 1: Select books and update conditions */}
             {step === 1 && (
               <SelectBooksStep
                 booksStatus={booksStatus}
@@ -407,12 +397,10 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
               />
             )}
 
-            {/* Step 2: Review fees */}
             {step === 2 && (
               <ReviewFeesStep booksStatus={booksStatus} totalFine={totalFine} />
             )}
 
-            {/* Step 3: Payment confirmation */}
             {step === 3 && (
               <PaymentStep
                 totalFine={totalFine}
@@ -421,7 +409,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
               />
             )}
 
-            {/* Step 4: Success */}
             {step === 4 && (
               <SuccessStep
                 totalFine={totalFine}

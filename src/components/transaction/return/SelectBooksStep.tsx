@@ -58,10 +58,17 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
     );
   }
 
-  // Helper to get condition name by id
   const getConditionNameById = (id: number): string => {
     const condition = conditions.find((c) => c.condition_id === id);
     return condition ? condition.condition_name : "";
+  };
+
+  // Kiểm tra xem điều kiện sách đã thay đổi hay chưa
+  const hasConditionChanged = (bookStatus: BookReturnStatus): boolean => {
+    return (
+      bookStatus.newCondition !== undefined &&
+      bookStatus.newCondition !== bookStatus.book.condition_id
+    );
   };
 
   return (
@@ -102,7 +109,10 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
                 <Select
                   value={bookStatus.newCondition?.toString()}
                   onValueChange={(value) => handleConditionChange(index, value)}
-                  disabled={!bookStatus.isSelected}
+                  disabled={
+                    !bookStatus.isSelected ||
+                    bookStatus.availabilityStatus === "Thất lạc"
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue>
@@ -136,7 +146,9 @@ export const SelectBooksStep: React.FC<SelectBooksStepProps> = ({
                         checked ? "Thất lạc" : "Có sẵn",
                       )
                     }
-                    disabled={!bookStatus.isSelected}
+                    disabled={
+                      !bookStatus.isSelected || hasConditionChanged(bookStatus)
+                    }
                   />
                   <Label>
                     {bookStatus.availabilityStatus === "Thất lạc"
