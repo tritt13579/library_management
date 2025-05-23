@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,15 +35,15 @@ export default function PaymentCardModel({
   oldDepositAmount = 0,
   isEdit = false,
 }: PaymentCardModelProps) {
+  const [open, setOpen] = useState(false);
 
   const diffDeposit = depositFee - oldDepositAmount;
-
   const total = isEdit ? diffDeposit : cardFee + depositFee;
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">Xem hóa đơn</Button>
+        <Button variant="default" onClick={() => setOpen(true)}>Xem hóa đơn</Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-md">
@@ -59,12 +60,12 @@ export default function PaymentCardModel({
               <span>{cardFee.toLocaleString("vi-VN")}₫</span>
             )}
           </div>
+
           <div className="flex justify-between">
             <span>Chi phí hạn mức</span>
-            {diffDeposit >= 0 
-              ? diffDeposit.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) 
-              : `- ${Math.abs(diffDeposit).toLocaleString("vi-VN", { style: "currency", currency: "VND" })} (Hoàn tiền)`
-            }
+            {diffDeposit >= 0
+              ? diffDeposit.toLocaleString("vi-VN", { style: "currency", currency: "VND" })
+              : `- ${Math.abs(diffDeposit).toLocaleString("vi-VN", { style: "currency", currency: "VND" })} (Hoàn tiền)`}
           </div>
 
           <Separator />
@@ -72,7 +73,9 @@ export default function PaymentCardModel({
           <div className="flex justify-between font-medium text-base">
             <span>Tổng thanh toán</span>
             <span>
-              {total >= 0 ? total.toLocaleString("vi-VN") + "₫" : `- ${Math.abs(total).toLocaleString("vi-VN")}₫ (Hoàn tiền)`}
+              {total >= 0
+                ? total.toLocaleString("vi-VN") + "₫"
+                : `- ${Math.abs(total).toLocaleString("vi-VN")}₫ (Hoàn tiền)`}
             </span>
           </div>
 
@@ -90,7 +93,7 @@ export default function PaymentCardModel({
           </div>
 
           <div className="flex justify-end gap-2 pt-6">
-            <Button variant="outline">In hóa đơn</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Đóng</Button>
           </div>
         </div>
       </DialogContent>
