@@ -25,7 +25,8 @@ import {
   BookOpen,
 } from "lucide-react";
 
-import { ReturnBookDialog } from "./ReturnBookDialog";
+import { ReturnBookDialog } from "../return/ReturnBookDialog";
+import { RenewBookDialog } from "../renew-book/renew-book-dialog";
 
 interface LoanDetailsDialogProps {
   selectedLoan: FormattedLoanTransaction | null;
@@ -43,6 +44,7 @@ export const LoanDetailsDialog: React.FC<LoanDetailsDialogProps> = ({
   onLoanStatusChanged,
 }) => {
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [renewDialogOpen, setRenewDialogOpen] = useState(false);
 
   const getBorrowTypeIcon = (borrowType: string) => {
     return borrowType === "Mượn về" ? (
@@ -56,7 +58,11 @@ export const LoanDetailsDialog: React.FC<LoanDetailsDialogProps> = ({
     setReturnDialogOpen(true);
   };
 
-  const handleReturnComplete = () => {
+  const handleRenewDialogOpen = () => {
+    setRenewDialogOpen(true);
+  };
+
+  const handleLoanStatusChanged = () => {
     if (onLoanStatusChanged) {
       onLoanStatusChanged();
     }
@@ -66,7 +72,7 @@ export const LoanDetailsDialog: React.FC<LoanDetailsDialogProps> = ({
   return (
     <>
       <Dialog
-        open={dialogOpen && !returnDialogOpen}
+        open={dialogOpen && !returnDialogOpen && !renewDialogOpen}
         onOpenChange={setDialogOpen}
       >
         <DialogContent className="max-w-2xl">
@@ -197,7 +203,7 @@ export const LoanDetailsDialog: React.FC<LoanDetailsDialogProps> = ({
               <DialogFooter className="gap-2 sm:gap-0">
                 {selectedLoan.status !== "Đã trả" && (
                   <>
-                    <Button variant="outline" onClick={closeDialog}>
+                    <Button variant="outline" onClick={handleRenewDialogOpen}>
                       <Clock className="mr-2 h-4 w-4" />
                       Gia hạn mượn
                     </Button>
@@ -229,8 +235,20 @@ export const LoanDetailsDialog: React.FC<LoanDetailsDialogProps> = ({
           dialogOpen={returnDialogOpen}
           setDialogOpen={setReturnDialogOpen}
           closeDialog={() => setReturnDialogOpen(false)}
-          onReturnComplete={handleReturnComplete}
+          onReturnComplete={handleLoanStatusChanged}
           returnToLoanDetails={() => setReturnDialogOpen(false)}
+        />
+      )}
+
+      {/* Renew Book Dialog */}
+      {selectedLoan && (
+        <RenewBookDialog
+          selectedLoan={selectedLoan}
+          dialogOpen={renewDialogOpen}
+          setDialogOpen={setRenewDialogOpen}
+          closeDialog={() => setRenewDialogOpen(false)}
+          onRenewComplete={handleLoanStatusChanged}
+          returnToLoanDetails={() => setRenewDialogOpen(false)}
         />
       )}
     </>

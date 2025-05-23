@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     const { data: currentLoansData, error: currentLoansError } =
       await supabaseAdmin
         .from("loantransaction")
-        .select("loan_transaction_id, loandetail(loan_detail_id)")
+        .select("loan_transaction_id, loandetail(loan_detail_id, return_date)")
         .eq("card_id", cardId)
         .eq("loan_status", "Đang mượn");
 
@@ -117,13 +117,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Tính tổng số sách đang mượn
     let currentlyBorrowedBooks = 0;
     currentLoansData?.forEach((loan) => {
-      if (loan.loandetail) {
-        currentlyBorrowedBooks += Array.isArray(loan.loandetail)
-          ? loan.loandetail.length
-          : 1;
+      if (loan.loandetail && Array.isArray(loan.loandetail)) {
+        const unreturned = loan.loandetail.filter(
+          (detail) => detail.return_date === null,
+        );
+        currentlyBorrowedBooks += unreturned.length;
       }
     });
 

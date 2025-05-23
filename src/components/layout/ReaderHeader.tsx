@@ -8,10 +8,10 @@ import {
   XMarkIcon,
   BellIcon,
 } from "@heroicons/react/24/solid";
-import { Button } from "./ui/button";
 import Link from "next/link";
 import DarkModeToggle from "./DarkModeToggle";
 import UserDropdown from "./UserDropdown";
+import { Button } from "../ui/button";
 
 const ReaderHeader = ({ user }: { user: any }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,7 +46,7 @@ const ReaderHeader = ({ user }: { user: any }) => {
           </div>
 
           {/* Desktop menu */}
-          <div className="hidden w-2/3 items-center space-x-6 lg:flex justify-end">
+          <div className="hidden w-2/3 items-center justify-end space-x-6 lg:flex">
             {/* Auth buttons */}
             <div className="flex items-center space-x-4">
               <DarkModeToggle />
@@ -83,7 +83,7 @@ const ReaderHeader = ({ user }: { user: any }) => {
         {/* Mobile menu */}
         {isMenuOpen && (
           <div className="flex flex-col items-center space-y-3 pb-4 lg:hidden">
-            {[ 
+            {[
               {
                 icon: <UserIcon className="h-5 w-5 text-primary" />,
                 label: "Đăng nhập",
