@@ -25,7 +25,6 @@ const CardDetailModal = ({
   onClose,
   onExtend,
   onCancel,
-  extendMonths,
   reader,
 }: CardDetailModalProps) => {
   if (!reader) return null;
@@ -50,7 +49,7 @@ const CardDetailModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md lg:max-w-xl max-h-full md:max-h-[90vh] sm:max-w-xl">
+      <DialogContent className="max-w-lg max-h-full md:max-h-[90vh] overflow-x-auto py-3 px-3">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-primary">
             Thẻ Thư Viện
@@ -58,48 +57,53 @@ const CardDetailModal = ({
         </DialogHeader>
 
         {/* Card Info Section */}
-        <div className="w-full rounded-xl border bg-background p-5 shadow-sm">
-          <div className="flex items-start gap-6">
-            {/* Image */}
-            <div className="flex-shrink-0">
+        <div className="flex flex-col bg-background rounded-lg border shadow-md p-6 py-4 min-w-[480px] min-h-[220px] relative">
+          {/* Header logo + tên thư viện */}
+          <div className="flex items-center gap-3 mb-4">
+            <Image
+              src="/images/logo/logoKH.jpg"
+              alt="Logo Khánh Hòa"
+              width={32}
+              height={32}
+              className="rounded-sm object-contain"
+            />
+            <span className="text-primary font-semibold text-base whitespace-nowrap">
+              Thư viện Tỉnh Khánh Hòa
+            </span>
+          </div>
+          {/* Nội dung thẻ: ảnh và thông tin */}
+          <div className="flex flex-row gap-6 w-[400px] h-[160px] overflow-hidden">
+            {/* Ảnh thẻ */}
+            <div className="flex-shrink-0 mx-auto sm:mx-0">
               <Image
                 src={reader.photo_url || "/images/logo/avatar.jpg"}
                 alt="Ảnh thẻ"
-                width={96}
-                height={144}
-                className="rounded-md border object-cover shadow w-24 h-36"
+                width={120}
+                height={180}
+                className="rounded-md border object-cover shadow-md"
               />
             </div>
-
-            {/* Info */}
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p className="mb-2 text-base font-semibold text-primary">
-                THẺ THƯ VIỆN
-              </p>
-              <p>
-                <strong className="text-gray-700">ID Thẻ:</strong>{" "}
-                {card?.card_id || "Chưa có"}
-              </p>
-              <p>
-                <strong className="text-gray-700">Loại thẻ:</strong>{" "}
-                {card?.card_type || "Không rõ"}
-              </p>
-              <p>
-                <strong className="text-gray-700">Hạn mức:</strong>{" "}
-                {deposit?.package_amount || 0} VND
-              </p>
-              <p>
-                <strong className="text-gray-700">Số thẻ:</strong>{" "}
-                {card?.card_number || "N/A"}
-              </p>
-              <p>
-                <strong className="text-gray-700">Ngày tạo:</strong>{" "}
-                {card?.issue_date?.slice(0, 10) || "N/A"}
-              </p>
-              <p>
-                <strong className="text-gray-700">Ngày hết hạn:</strong>{" "}
-                {card?.expiry_date?.slice(0, 10) || "N/A"}
-              </p>
+            {/* Thông tin thẻ */}
+            <div className="flex flex-col justify-start text-primary w-full min-w-[300px]">
+              <p className="text-lg font-semibold mb-4">THẺ THƯ VIỆN</p>
+              <div className="flex flex-col gap-1 text-sm sm:text-base text-gray-800">
+                <div className="text-primary">
+                  <span className="font-semibold">Số thẻ:</span>{" "}
+                  {card?.card_number || "N/A"}
+                </div>
+                <div className="text-primary">
+                  <span className="font-semibold">Họ tên:</span>{" "}
+                  {(reader.last_name || "") + " " + (reader.first_name || "") || "Họ tên"}
+                </div>
+                <div className="text-primary">
+                  <span className="font-semibold">Loại thẻ:</span>{" "}
+                  {card?.card_type || "Không rõ"}
+                </div>
+                <div className="text-primary">
+                  <span className="font-semibold">Ngày hết hạn:</span>{" "}
+                  {card?.expiry_date?.slice(0, 10) || "N/A"}
+                </div>
+              </div>
             </div>
           </div>
         </div>

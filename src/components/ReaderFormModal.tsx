@@ -432,6 +432,7 @@ const ReaderFormModal = ({
             setPaymentMethod={setPaymentMethod}
             oldDepositAmount={oldDepositPackageAmount}
             isEdit={isEditOpen}
+            fullName={`${formData.last_name} ${formData.first_name}`}
           />
         </div>
         )}
