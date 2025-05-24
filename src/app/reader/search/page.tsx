@@ -293,100 +293,118 @@ const SearchPage = () => {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Select value={authorFilter} onValueChange={setAuthorFilter}>
-          <SelectTrigger className="min-w-[160px] flex-1">
-            <SelectValue placeholder="Tác giả" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            {[
-              ...new Set(
-                books.flatMap((b) => b.authors?.map((a) => a.author_name)),
-              ),
-            ]
-              .filter(Boolean)
-              .map((name, i) => (
-                <SelectItem key={i} value={name || ""}>
-                  {name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col min-w-[160px] flex-1">
+            <label className="text-sm font-medium mb-1">Tác giả</label>
+            <Select value={authorFilter} onValueChange={setAuthorFilter}>
+              <SelectTrigger className="min-w-[160px] flex-1">
+                <SelectValue placeholder="Tác giả" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {[
+                  ...new Set(
+                    books.flatMap((b) => b.authors?.map((a) => a.author_name)),
+                  ),
+                ]
+                  .filter(Boolean)
+                  .map((name, i) => (
+                    <SelectItem key={i} value={name || ""}>
+                      {name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+        </div>
 
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="min-w-[160px] flex-1">
-            <SelectValue placeholder="Thể loại" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(books.map((b) => b.category?.category_name))]
-              .filter(Boolean)
-              .map((cat, i) => (
-                <SelectItem key={i} value={cat || ""}>
-                  {cat}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col min-w-[160px] flex-1">
+            <label className="text-sm font-medium mb-1">Thể loại</label>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="min-w-[160px] flex-1">
+                <SelectValue placeholder="Thể loại" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {[...new Set(books.map((b) => b.category?.category_name))]
+                  .filter(Boolean)
+                  .map((cat, i) => (
+                  <SelectItem key={i} value={cat || ""}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+        </div>
+        
+        <div className="flex flex-col min-w-[160px] flex-1">
+            <label className="text-sm font-medium mb-1">Kệ sách</label>
+            <Select value={shelfFilter} onValueChange={setShelfFilter}>
+              <SelectTrigger className="min-w-[160px] flex-1">
+                <SelectValue placeholder="Kệ sách" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {[...new Set(books.map((b) => b.shelf?.location))]
+                  .filter(Boolean)
+                  .map((loc, i) => (
+                  <SelectItem key={i} value={loc || ""}>
+                    {loc}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+        </div>
 
-        <Select value={shelfFilter} onValueChange={setShelfFilter}>
-          <SelectTrigger className="min-w-[160px] flex-1">
-            <SelectValue placeholder="Kệ sách" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(books.map((b) => b.shelf?.location))]
-              .filter(Boolean)
-              .map((loc, i) => (
-                <SelectItem key={i} value={loc || ""}>
-                  {loc}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col min-w-[160px] flex-1">
+            <label className="text-sm font-medium mb-1">Nhà xuất bản</label>
+            <Select value={publisherFilter} onValueChange={setPublisherFilter}>
+              <SelectTrigger className="min-w-[160px] flex-1">
+                <SelectValue placeholder="Nhà xuất bản" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {[...new Set(books.map((b) => b.publisher?.publisher_name))]
+                  .filter(Boolean)
+                  .map((pub, i) => (
+                    <SelectItem key={i} value={pub || ""}>
+                      {pub}
+                    </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+        </div>
 
-        <Select value={publisherFilter} onValueChange={setPublisherFilter}>
-          <SelectTrigger className="min-w-[160px] flex-1">
-            <SelectValue placeholder="Nhà xuất bản" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            {[...new Set(books.map((b) => b.publisher?.publisher_name))]
-              .filter(Boolean)
-              .map((pub, i) => (
-                <SelectItem key={i} value={pub || ""}>
-                  {pub}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col min-w-[160px] flex-1">
+            <label className="text-sm font-medium mb-1">Tình trạng</label>
+            <Select
+              value={availabilityFilter}
+              onValueChange={setAvailabilityFilter}
+            >
+              <SelectTrigger className="min-w-[160px] flex-1">
+                <SelectValue placeholder="Tình trạng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="Có sẵn">Có sẵn</SelectItem>
+                <SelectItem value="Đang mượn">Đang mượn</SelectItem>
+                <SelectItem value="Đặt trước">Đặt trước</SelectItem>
+                <SelectItem value="Thất lạc">Thất lạc</SelectItem>
+              </SelectContent>
+            </Select>
+        </div>
 
-        <Select
-          value={availabilityFilter}
-          onValueChange={setAvailabilityFilter}
-        >
-          <SelectTrigger className="min-w-[160px] flex-1">
-            <SelectValue placeholder="Tình trạng" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="Có sẵn">Có sẵn</SelectItem>
-            <SelectItem value="Đang mượn">Đang mượn</SelectItem>
-            <SelectItem value="Đặt trước">Đặt trước</SelectItem>
-            <SelectItem value="Thất lạc">Thất lạc</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={sortOption} onValueChange={setSortOption}>
-          <SelectTrigger className="min-w-[160px] flex-1">
-            <SelectValue placeholder="Sắp xếp theo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="moinhat">Mới nhất</SelectItem>
-            <SelectItem value="cunhat">Cũ nhất</SelectItem>
-            <SelectItem value="theoten">Theo tên (A-Z)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col min-w-[160px] flex-1">
+            <label className="text-sm font-medium mb-1">Sắp xếp theo</label>
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="min-w-[160px] flex-1">
+                <SelectValue placeholder="Sắp xếp theo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="moinhat">Mới nhất</SelectItem>
+                <SelectItem value="cunhat">Cũ nhất</SelectItem>
+                <SelectItem value="theoten">Theo tên (A-Z)</SelectItem>
+              </SelectContent>
+            </Select>
+        </div>
       </div>
 
       <p>Tổng số {filteredBooks.length} tài liệu</p>
