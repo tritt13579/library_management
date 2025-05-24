@@ -9,7 +9,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 interface StaffFormModalProps {
@@ -30,7 +40,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   isEditOpen,
   closeAdd,
   staffData,
-  onSuccess
+  onSuccess,
 }) => {
   const { toast } = useToast();
   const [firstName, setFirstName] = useState("");
@@ -42,7 +52,6 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [hireDate, setHireDate] = useState("");
-
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -155,92 +164,75 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-4">
-          <input
-            type="text"
-            placeholder="Họ nhân viên"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-4 py-2"
-          />
-          <input
-            type="text"
-            placeholder="Tên nhân viên"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-4 py-2"
-          />
-          <div className="flex flex-col">
-            <label className="mb-1 text-sm font-medium text-gray-700">Ngày sinh</label>
-            <input
-              type="date"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="rounded-md border border-gray-300 bg-input px-4 py-2"
-            />
+        <div className="grid grid-cols-1 gap-4 mt-4">
+          <div>
+            <Label>Họ nhân viên</Label>
+            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
+
+          <div>
+            <Label>Tên nhân viên</Label>
+            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          </div>
+
+          <div>
+            <Label>Ngày sinh</Label>
+            <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="rounded-md border border-gray-300 bg-input px-4 py-2"
-            >
-              <option value="">Chọn giới tính</option>
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
-            </select>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-md border border-gray-300 bg-input px-4 py-2"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Số điện thoại"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="rounded-md border border-gray-300 bg-input px-4 py-2"
-            />
-            <div className="flex flex-col">
-              <label className="mb-1 text-sm font-medium text-gray-700">Ngày vào làm</label>
-              <input
-                type="date"
-                value={hireDate}
-                onChange={(e) => setHireDate(e.target.value)}
-                className="rounded-md border border-gray-300 bg-input px-4 py-2"
-              />
+            <div>
+              <Label>Giới tính</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn giới tính" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Nam">Nam</SelectItem>
+                  <SelectItem value="Nữ">Nữ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           </div>
 
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="rounded-md border border-gray-300 bg-input px-4 py-2"
-          >
-            <option value="">Chọn chức vụ</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Số điện thoại</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div>
+              <Label>Ngày vào làm</Label>
+              <Input type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
+            </div>
+          </div>
 
-          <textarea
-            placeholder="Địa chỉ"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            rows={3}
-            className="rounded-md border border-gray-300 bg-input px-4 py-2"
-          />
+          <div>
+            <Label>Chức vụ</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn chức vụ" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((r) => (
+                  <SelectItem key={r.id} value={r.id.toString()}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Địa chỉ</Label>
+            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
+          </div>
         </div>
 
-        <DialogFooter className="mt-4 flex justify-end space-x-3">
+        <DialogFooter className="mt-6 flex justify-end gap-3">
           <Button
             type="button"
             variant="outline"
