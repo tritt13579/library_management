@@ -44,43 +44,43 @@ type MenuItem = {
 
 const allItems: MenuItem[] = [
   {
-    title: "Transactions",
+    title: "Mượn/Trả sách",
     url: "/staff/",
     icon: LayoutDashboard,
     requiredPermission: "Quản lý giao dịch",
   },
   {
-    title: "Readers",
+    title: "Độc giả",
     url: "/staff/readers",
     icon: Users,
     requiredPermission: "Quản lí độc giả",
   },
   {
-    title: "Staff",
+    title: "Nhân viên",
     url: "/staff/staff",
     icon: UserCog,
     requiredPermission: "Quản lí nhân viên",
   },
   {
-    title: "Books",
+    title: "Sách",
     url: "/staff/books",
     icon: BookOpen,
     requiredPermission: "Quản lí sách",
   },
   {
-    title: "Reports",
+    title: "Báo cáo thống kê",
     url: "/staff/reports",
     icon: FileBarChart2,
     requiredPermission: "Báo cáo thống kê",
   },
   {
-    title: "Payments",
+    title: "Thanh toán",
     url: "/staff/payments",
     icon: FileBarChart2,
     requiredPermission: "Quản lí thanh toán",
   },
   {
-    title: "Setting",
+    title: "Cài đặt",
     url: "#",
     icon: Settings,
     requiredPermission: "Cài đặt",
