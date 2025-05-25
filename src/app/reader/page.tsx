@@ -1,31 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
-// Import icon Heroicons
-import {
-  BookOpenIcon,
-  AcademicCapIcon,
-  SparklesIcon,
-  UsersIcon,
-  ChatBubbleLeftRightIcon,
-  CubeIcon,
-  BeakerIcon,
-  PaintBrushIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/solid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import CategoryQuickAccess from "@/components/readerpage/CategoryQuickAccess";
+import Propagate from "@/components/readerpage/Propagate";
+import { Playfair_Display } from "next/font/google";
 
-const categories = [
-  { label: "Tổng hợp", icon: <BookOpenIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Triết học và các khoa học liên quan", icon: <AcademicCapIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Tôn giáo", icon: <SparklesIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Các khoa học xã hội", icon: <UsersIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Ngôn ngữ học", icon: <ChatBubbleLeftRightIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Các khoa học chính xác", icon: <CubeIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Các khoa học ứng dụng", icon: <BeakerIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Nghệ thuật", icon: <PaintBrushIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-  { label: "Văn học", icon: <DocumentTextIcon className="w-8 h-8" style={{ color: "#0071BC" }} /> },
-];
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
 
 const ReaderHomePage = () => {
 
@@ -76,7 +60,7 @@ const ReaderHomePage = () => {
       </section>
 
       {/* ===== NAVBAR ===== */}
-      <nav className="bg-white shadow-md">
+      <nav className="bg-background shadow-md">
         <div className="flex flex-wrap items-start justify-between px-4 py-2">
           <div className="flex items-center space-x-2 font-semibold text-gray-900">
             <svg
@@ -106,34 +90,7 @@ const ReaderHomePage = () => {
       </nav>
 
       {/* ===== TUYÊN TRUYỀN + MARQUEE ===== */}
-      <div className="flex items-center bg-[#0071BC] text-white font-bold px-4 py-2 text-sm uppercase whitespace-nowrap">
-        <div className="flex-shrink-0 mr-6">TUYÊN TRUYỀN</div>
-        <div className="overflow-hidden flex-1">
-          <div
-            className="inline-block text-white animate-[marquee_30s_linear_infinite]"
-            style={{
-              animationName: "marquee",
-              animationDuration: "30s",
-              animationTimingFunction: "linear",
-              animationIterationCount: "infinite",
-            }}
-          >
-            <span className="mx-6">
-              Hoạt động hưởng ứng Tuần lễ Quốc gia phòng chống thiên tai năm 2025
-            </span>
-            <span className="mx-6">•</span>
-            <span className="mx-6">
-              Tuyên truyền, hưởng ứng Cuộc thi và Triển lãm ảnh nghệ thuật cấp Quốc gia “Tổ quốc bên bờ sóng”
-            </span>
-            <span className="mx-6">•</span>
-            <span className="mx-6">Thông tin mới nhất về các hoạt động của thư viện Khánh Hòa</span>
-            <span className="mx-6">•</span>
-            <span className="mx-6">
-              Tuyên truyền kỷ niệm 50 năm Ngày giải phóng tỉnh Khánh Hòa và 50 năm Ngày giải phóng miền Nam, thống nhất đất nước
-            </span>
-          </div>
-        </div>
-      </div>
+      <Propagate />
 
       {/* ===== BANNER SECTION 2 ===== */}
       <div className="w-full h-[350px] relative overflow-hidden mt-3">
@@ -160,14 +117,14 @@ const ReaderHomePage = () => {
       </div>
 
       {/* ===== THƯ VIỆN + DANH MỤC ===== */}
-      <div className="bg-gray-50 w-full py-8 px-4 md:px-12">
+      <div className="bg-background w-full py-8 px-4 md:px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 items-start">
-          {/* Cột bên trái - Thư viện */}
+          {/* Thư viện */}
           <div className="text-center md:text-left">
             <h2 className="text-primary text-2xl md:text-3xl font-bold mb-4">
               THƯ VIỆN TỈNH KHÁNH HÒA
             </h2>
-            <div className="relative w-full max-w-md mx-auto md:mx-0">
+            <div className="relative w-full max-w-xl mx-auto md:mx-0">
               <img
                 src="/images/banner/banner2.png"
                 alt="Thư viện Tỉnh Khánh Hòa"
@@ -187,22 +144,9 @@ const ReaderHomePage = () => {
             </div>
           </div>
 
-          {/* Cột bên phải - Danh mục */}
+          {/* Danh mục */}
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-6 text-center md:text-left">
-              TRUY CẬP NHANH DANH MỤC
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-center text-sm text-primary">
-              {categories.map(({ label, icon }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center space-y-2 hover:scale-105 transition-transform duration-300 cursor-pointer"
-                >
-                  {icon}
-                  <div>{label}</div>
-                </div>
-              ))}
-            </div>
+            <CategoryQuickAccess />
           </div>
         </div>
       </div>
@@ -237,13 +181,10 @@ const ReaderHomePage = () => {
         </div>
       </div>
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main className="px-4 py-8 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-gray-900">Chào mừng đến với Thư viện Khánh Hòa</h1>
-        <p className="text-gray-700">
-          Sách
-        </p>
-      </main>
+      <section className="bg-gradient-to-r from-blue-100 to-blue-300 py-12 rounded-xl shadow-inner mt-10 mb-10 px-6 text-center">
+        <h2 className={`text-2xl md:text-3xl font-bold text-gray-800 mb-4 ${playfair.className}`}>"Đọc sách là cách bạn trò chuyện với những bộ óc vĩ đại nhất lịch sử."</h2>
+        <p className="text-gray-700 text-sm md:text-base mb-6">– René Descartes</p>
+      </section>
 
       {/* Tailwind animation marquee */}
       <style>

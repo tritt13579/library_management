@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/admin";
 import { NextRequest, NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,14 +12,34 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await excelFile.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(worksheet);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(arrayBuffer);
+
+    const worksheet = workbook.worksheets[0];
+    const rows = worksheet.getSheetValues(); // Chỉ số bắt đầu từ 1
 
     let successCount = 0;
     const failedRows: { rowIndex: number; reason: string }[] = [];
 
-    for (const [i, row] of rows.entries()) {
+    // Lấy tiêu đề từ dòng 1
+    const headerRow = rows[1] as string[];
+    if (!headerRow) {
+      return NextResponse.json({ error: "Không có dòng tiêu đề" }, { status: 400 });
+    }
+
+    // Lặp từ dòng thứ 2 trở đi
+    for (let i = 2; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row) continue;
+
+      // Map header -> value
+      const rowData: Record<string, any> = {};
+      for (let j = 1; j < headerRow.length; j++) {
+        const key = headerRow[j];
+        const value = (row as ExcelJS.CellValue[])[j];
+        if (key) rowData[key] = value;
+      }
+
       try {
         const {
           title,
@@ -33,27 +53,24 @@ export async function POST(req: NextRequest) {
           description,
           authors,
           cover_image,
-        } = row as any;
+        } = rowData;
 
-        // Kiểm tra các trường bắt buộc
         if (!title || !category_id || !publisher_id || !shelf_id || !publication_year || !isbn || !language) {
-          failedRows.push({ rowIndex: i + 2, reason: "Thiếu trường bắt buộc" });
+          failedRows.push({ rowIndex: i, reason: "Thiếu trường bắt buộc" });
           continue;
         }
 
-        // Kiểm tra ISBN trùng
-        const { data: existing, error: findError } = await supabaseAdmin
+        const { data: existing } = await supabaseAdmin
           .from("booktitle")
           .select("book_title_id")
           .eq("isbn", isbn)
           .single();
 
         if (existing?.book_title_id) {
-          failedRows.push({ rowIndex: i + 2, reason: "Sách với ISBN này đã tồn tại" });
+          failedRows.push({ rowIndex: i, reason: "Sách với ISBN này đã tồn tại" });
           continue;
         }
 
-        // Thêm booktitle
         const { data: insertedBook, error: insertError } = await supabaseAdmin
           .from("booktitle")
           .insert([
@@ -74,7 +91,7 @@ export async function POST(req: NextRequest) {
           .single();
 
         if (insertError || !insertedBook) {
-          failedRows.push({ rowIndex: i + 2, reason: "Không thể thêm booktitle" });
+          failedRows.push({ rowIndex: i, reason: "Không thể thêm booktitle" });
           continue;
         }
 
@@ -91,21 +108,15 @@ export async function POST(req: NextRequest) {
               author_id,
             }));
 
-
-            const { error: authorsError } = await supabaseAdmin
+            await supabaseAdmin
               .from("iswrittenby")
               .insert(relations);
-
-            if (authorsError) {
-                console.log(`Không thể thêm tác giả `);
-            }
           }
         }
 
         successCount++;
       } catch (err) {
-        console.error(`Lỗi ở dòng ${i + 2}:`, err);
-        failedRows.push({ rowIndex: i + 2, reason: "Lỗi không xác định" });
+        failedRows.push({ rowIndex: i, reason: "Lỗi không xác định" });
       }
     }
 

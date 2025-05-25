@@ -297,18 +297,28 @@ const ReaderFormModal = ({
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            name="last_name"
-            value={formData.last_name}
-            onChange={handleChange}
-            placeholder="Họ"
-          />
-          <Input
-            name="first_name"
-            value={formData.first_name}
-            onChange={handleChange}
-            placeholder="Tên"
-          />
+          <div className="col-span-2 flex gap-4">
+            <div className="flex flex-col flex-1">
+              <Label className="mb-2">Họ độc giả</Label>
+              <Input
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                placeholder="Họ"
+              />
+            </div>
+            <div className="col-span-2 flex gap-4">
+              <div className="flex flex-col flex-1">
+                <Label className="mb-2">Tên độc giả</Label>
+                <Input
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  placeholder="Tên"
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="col-span-2 flex gap-4">
             <div className="flex flex-col flex-1">
@@ -339,87 +349,103 @@ const ReaderFormModal = ({
             </div>
           </div>
 
-          <Input
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Email"
-            type="email"
-          />
-          <Input
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="Số điện thoại"
-          />
-          <Input
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Địa chỉ"
-          />
-
-          <div className="flex flex-col">
-            <Label className="mb-2">Loại thẻ</Label>
-            <Select
-              value={formData.card_type}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, card_type: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn loại thẻ" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Mượn">Thẻ mượn</SelectItem>
-                <SelectItem value="Đọc">Thẻ đọc</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col">
-            <Label className="mb-2">Gói đặt cọc</Label>
-            <Select
-              value={formData.deposit_package_id}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  deposit_package_id: value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn gói đặt cọc" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none" disabled>
-                  0 ₫
-                </SelectItem>
-                {depositPackages.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                    {pkg.amount.toLocaleString("vi-VN")}₫
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="col-span-2">
-            <Label className="mb-2">Ảnh thẻ</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) =>
-                setImageFile(e.target.files?.[0] || null)
-              }
-            />
-            {formData.photo_url && !imageFile && (
-              <img
-                src={formData.photo_url}
-                alt="Ảnh cũ"
-                className="mt-2 h-24 w-24 rounded object-cover"
+          <div className="col-span-2 flex gap-4">
+            <div className="flex flex-col flex-1">
+              <Label className="mb-2">Email</Label>
+              <Input
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email"
+                type="email"
               />
-            )}
+            </div>
+            <div className="col-span-2 flex gap-4">
+              <div className="flex flex-col flex-1">
+                <Label className="mb-2">Số điện thoại</Label>
+                <Input
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Số điện thoại"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="col-span-2 flex gap-4">
+            <div className="flex flex-col flex-1">
+              <Label className="mb-2">Địa chỉ</Label>
+              <Input
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Địa chỉ"
+              />
+            </div>
+            <div className="flex flex-col flex-1">
+              <Label className="mb-2">Loại thẻ</Label>
+              <Select
+                value={formData.card_type}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, card_type: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn loại thẻ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Mượn">Thẻ mượn</SelectItem>
+                  <SelectItem value="Đọc">Thẻ đọc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="col-span-2 flex gap-4">
+            <div className="flex flex-col flex-1">
+              <Label className="mb-2">Gói đặt cọc</Label>
+              <Select
+                value={formData.deposit_package_id}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    deposit_package_id: value,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn gói đặt cọc" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" disabled>
+                    0 ₫
+                  </SelectItem>
+                  {depositPackages.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                      {pkg.amount.toLocaleString("vi-VN")}₫
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col flex-1">
+              <Label className="mb-2">Ảnh thẻ</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setImageFile(e.target.files?.[0] || null)
+                }
+              />
+              {formData.photo_url && !imageFile && (
+                <img
+                  src={formData.photo_url}
+                  alt="Ảnh cũ"
+                  className="mt-2 h-24 w-24 rounded object-cover"
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -432,6 +458,7 @@ const ReaderFormModal = ({
             setPaymentMethod={setPaymentMethod}
             oldDepositAmount={oldDepositPackageAmount}
             isEdit={isEditOpen}
+            fullName={`${formData.last_name} ${formData.first_name}`}
           />
         </div>
         )}
