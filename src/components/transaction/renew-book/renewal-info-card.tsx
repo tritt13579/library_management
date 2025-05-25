@@ -55,7 +55,9 @@ export const RenewalInfoCard: React.FC<RenewalInfoCardProps> = ({
         {canRenew && newDueDate && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Hạn trả mới:</span>
-            <span className="font-medium text-green-600">{newDueDate}</span>
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              {newDueDate}
+            </span>
           </div>
         )}
       </CardContent>

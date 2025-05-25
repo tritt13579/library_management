@@ -29,10 +29,12 @@ export const RenewalStatusAlert: React.FC<RenewalStatusAlertProps> = ({
 
   if (canRenew) {
     return (
-      <Alert className="border-green-200 bg-green-50">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertTitle className="text-green-700">Sẵn sàng gia hạn</AlertTitle>
-        <AlertDescription className="text-green-600">
+      <Alert className="border-green-200 bg-green-50 dark:border-green-600 dark:bg-green-900">
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-300" />
+        <AlertTitle className="text-green-700 dark:text-green-200">
+          Sẵn sàng gia hạn
+        </AlertTitle>
+        <AlertDescription className="text-green-600 dark:text-green-300">
           Bạn có thể gia hạn thêm {renewalDays} ngày cho {unreturnedBookCount}{" "}
           sách chưa trả.
         </AlertDescription>
