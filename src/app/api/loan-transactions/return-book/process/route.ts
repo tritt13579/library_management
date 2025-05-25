@@ -41,24 +41,26 @@ export async function POST(request: NextRequest) {
       (status) => status.isSelected,
     );
 
-    // Generate receipt number
-    const date = new Date();
-    const timestamp = date.getTime();
-    const receiptNumber = `REC-${timestamp}-${Math.floor(Math.random() * 1000)}`;
+    // Generate invoice and receipt numbers
+    const generateCode = (prefix: string) =>
+      `${prefix}${Math.floor(100000 + Math.random() * 900000)}`;
 
     // 1. Create payment record if there's a fine
     let paymentId = null;
     if (totalFine > 0) {
+      const paymentInsert = {
+        reader_id: readerId,
+        payment_date: new Date().toISOString().split("T")[0],
+        amount: totalFine,
+        reference_type: "finetransaction",
+        payment_method: paymentMethod,
+        invoice_no: generateCode("INV"),
+        receipt_no: generateCode("RCPT"),
+      };
+
       const { data: paymentData, error: paymentError } = await supabase
         .from("payment")
-        .insert({
-          reader_id: readerId,
-          payment_date: new Date().toISOString().split("T")[0],
-          amount: totalFine,
-          reference_type: "finetransaction",
-          payment_method: paymentMethod,
-          receipt_no: receiptNumber,
-        })
+        .insert(paymentInsert)
         .select();
 
       if (paymentError) throw paymentError;
@@ -178,7 +180,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      receiptNumber,
       message: "Return processed successfully",
     });
   } catch (error) {
