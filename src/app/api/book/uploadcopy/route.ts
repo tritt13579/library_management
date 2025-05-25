@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/admin";
 import { NextRequest, NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,25 +14,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const workbook = XLSX.read(buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    const arrayBuffer = await file.arrayBuffer();
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(arrayBuffer);
+    const worksheet = workbook.worksheets[0];
+
+    const rows = worksheet.getSheetValues(); // rows[0] = undefined, rows[1] = header
 
     const errors: { row: number; message: string }[] = [];
     const insertedCopies: any[] = [];
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    const headerRow = rows[1] as string[] | undefined;
+    if (!headerRow) {
+      return NextResponse.json(
+        { error: "Không tìm thấy dòng tiêu đề (header) trong file." },
+        { status: 400 },
+      );
+    }
 
-      const book_title_id = row["book_title_id"];
-      const acquisition_date = row["acquisition_date"];
-      const price = row["price"];
-      const condition_id = row["condition_id"];
+    for (let i = 2; i < rows.length; i++) {
+      const row = rows[i] as ExcelJS.CellValue[] | undefined;
+      if (!row) continue;
+
+      // Mapping dữ liệu dựa trên header
+      const rowData: Record<string, any> = {};
+      for (let j = 1; j < headerRow.length; j++) {
+        const key = headerRow[j];
+        rowData[key] = row[j];
+      }
+
+      const {
+        book_title_id,
+        acquisition_date,
+        price,
+        condition_id,
+      } = rowData;
 
       if (!book_title_id || !acquisition_date || !price || !condition_id) {
-        errors.push({ row: i + 2, message: "Thiếu trường bắt buộc" });
+        errors.push({ row: i, message: "Thiếu trường bắt buộc" });
         continue;
       }
 
@@ -51,7 +71,7 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (error) {
-        errors.push({ row: i + 2, message: error.message });
+        errors.push({ row: i, message: error.message });
         continue;
       }
 

@@ -223,6 +223,7 @@ const ReadersPage = () => {
         onClose={closeModals}
         reader={selectedReader}
         onSuccess={handleSuccess}
+        fullName={`${selectedReader?.last_name || ''} ${selectedReader?.first_name || ''}`}
       />
 
       <ExtendCardModal
@@ -230,6 +231,7 @@ const ReadersPage = () => {
         onClose={closeModals}
         readerId={selectedReader?.reader_id}
         onSuccess={handleSuccess}
+        fullName={`${selectedReader?.last_name || ''} ${selectedReader?.first_name || ''}`}
       />
 
       <CardDetailModal

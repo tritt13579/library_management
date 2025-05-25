@@ -73,49 +73,54 @@ const StaffDetailModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md lg:max-w-3xl max-h-[90vh] sm:max-w-xl overflow-auto">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-auto p-6 rounded-xl space-y-6">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-bold text-primary">
+            <DialogTitle className="text-2xl font-bold text-primary">
               Chi tiết nhân viên
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <InfoRow label="Họ và Tên" value={`${staff.last_name} ${staff.first_name}`} />
-            <InfoRow label="Ngày sinh" value={staff.date_of_birth} />
-            <InfoRow
-              label="Giới tính"
-              value={staff.gender === "F" ? "Nữ" : staff.gender === "M" ? "Nam" : "Khác"}
-            />
-            <InfoRow label="Email" value={staff.email} />
-            <InfoRow label="Chức vụ" value={staff.role?.role_name || "Không rõ"} />
-            <InfoRow label="Số điện thoại" value={staff.phone} />
-            <InfoRow label="Địa chỉ" value={staff.address} />
-            <InfoRow label="Ngày làm việc" value={staff.hire_date} />
+          <div className="space-y-5">
+            {/* Thông tin cá nhân */}
+            <Section title="Thông tin cá nhân">
+              <InfoRow label="Họ và Tên" value={`${staff.last_name} ${staff.first_name}`} />
+              <InfoRow label="Ngày sinh" value={staff.date_of_birth} />
+              <InfoRow
+                label="Giới tính"
+                value={staff.gender === "F" ? "Nữ" : staff.gender === "M" ? "Nam" : "Khác"}
+              />
+            </Section>
+
+            {/* Liên hệ */}
+            <Section title="Liên hệ">
+              <InfoRow label="Email" value={staff.email} />
+              <InfoRow label="Số điện thoại" value={staff.phone} />
+              <InfoRow label="Địa chỉ" value={staff.address} />
+            </Section>
+
+            {/* Công việc */}
+            <Section title="Công việc">
+              <InfoRow label="Chức vụ" value={staff.role?.role_name || "Không rõ"} />
+              <InfoRow label="Ngày làm việc" value={staff.hire_date} />
+            </Section>
           </div>
 
-          <DialogFooter className="flex flex-wrap justify-end gap-3 pt-6">
+          <DialogFooter className="flex flex-wrap justify-end gap-3 pt-4">
             <Button
-              onClick={() => onEdit(staff)}
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              onClick={onClose}
+              variant="ghost"
             >
-              <Pencil className="mr-2 h-4 w-4" />
-              Chỉnh sửa
+              Đóng
             </Button>
             <Button
               onClick={() => setConfirmOpen(true)}
               className="bg-red-600 text-white hover:bg-red-700"
               disabled={isDeleting}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
               Xóa
             </Button>
-            <Button
-              onClick={onClose}
-              className="bg-muted text-muted-foreground hover:bg-muted/80"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Đóng
+            <Button onClick={() => onEdit(staff)}>
+              Chỉnh sửa
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -158,10 +163,17 @@ const StaffDetailModal = ({
   );
 };
 
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="space-y-2">
+    <h4 className="text-sm font-semibold text-muted-foreground">{title}</h4>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
+  </div>
+);
+
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col">
-    <span className="text-sm font-medium text-muted-foreground">{label}</span>
-    <span className="text-base text-foreground">{value || "—"}</span>
+    <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <span className="text-sm text-foreground">{value || "—"}</span>
   </div>
 );
 

@@ -80,7 +80,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md lg:max-w-4xl max-h-full md:max-h-[90vh] sm:max-w-xl">
+        <DialogContent className="max-w-md lg:max-w-3xl max-h-full md:max-h-[90vh] sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-primary">
               {reader.last_name} {reader.first_name}
@@ -89,7 +89,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
 
           <div className="flex flex-col gap-6 lg:flex-row">
             {/* Left: Info */}
-            <div className="lg:w-2/3 space-y-3 text-base text-muted-foreground">
+            <div className="lg:w-full flex flex-col h-full space-y-3 text-base text-muted-foreground">
               <p className="text-sm text-gray-400">ID: {reader.reader_id}</p>
 
               <Info label="Ngày sinh" value={reader.date_of_birth} />
@@ -100,8 +100,8 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
               <Info label="Email" value={reader.email} />
               <Info label="Số điện thoại" value={reader.phone} />
               <Info label="Địa chỉ" value={reader.address} />
-
-              <div className="mt-6 flex flex-wrap gap-3">
+              
+              <div className="flex flex-wrap gap-3 mt-auto">
                 <Button variant="outline" onClick={onClose}>
                   Đóng
                 </Button>
@@ -126,7 +126,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
             </div>
 
             {/* Right: Avatar */}
-            <div className="hidden lg:block lg:w-1/3">
+            <div className="hidden lg:block lg:w-2/3">
               <div className="aspect-square overflow-hidden rounded-xl shadow-lg border border-gray-200">
                 <Image
                   src={reader.photo_url || "/images/logo/avatar.jpg"}

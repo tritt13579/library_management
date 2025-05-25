@@ -1,5 +1,5 @@
 import { getUser } from "@/auth/server";
-import ReaderHeader from "@/components/ReaderHeader";
+import ReaderHeader from "@/components/layout/ReaderHeader";
 import FooterReaderPage from "@/components/FooterReaderPage";
 
 export default async function ReaderLayout({
