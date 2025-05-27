@@ -38,11 +38,14 @@ const StaffDetailModal = ({
   const handleDeleteConfirmed = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch("/api/staff/delete", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ staffId: staff.staff_id }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/staff/delete`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ staffId: staff.staff_id }),
+        },
+      );
 
       const result = await res.json();
       if (!res.ok) {
@@ -73,7 +76,7 @@ const StaffDetailModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-auto p-6 rounded-xl space-y-6">
+        <DialogContent className="max-h-[90vh] max-w-md space-y-6 overflow-auto rounded-xl p-6">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">
               Chi tiết nhân viên
@@ -83,11 +86,20 @@ const StaffDetailModal = ({
           <div className="space-y-5">
             {/* Thông tin cá nhân */}
             <Section title="Thông tin cá nhân">
-              <InfoRow label="Họ và Tên" value={`${staff.last_name} ${staff.first_name}`} />
+              <InfoRow
+                label="Họ và Tên"
+                value={`${staff.last_name} ${staff.first_name}`}
+              />
               <InfoRow label="Ngày sinh" value={staff.date_of_birth} />
               <InfoRow
                 label="Giới tính"
-                value={staff.gender === "F" ? "Nữ" : staff.gender === "M" ? "Nam" : "Khác"}
+                value={
+                  staff.gender === "F"
+                    ? "Nữ"
+                    : staff.gender === "M"
+                      ? "Nam"
+                      : "Khác"
+                }
               />
             </Section>
 
@@ -100,16 +112,16 @@ const StaffDetailModal = ({
 
             {/* Công việc */}
             <Section title="Công việc">
-              <InfoRow label="Chức vụ" value={staff.role?.role_name || "Không rõ"} />
+              <InfoRow
+                label="Chức vụ"
+                value={staff.role?.role_name || "Không rõ"}
+              />
               <InfoRow label="Ngày làm việc" value={staff.hire_date} />
             </Section>
           </div>
 
           <DialogFooter className="flex flex-wrap justify-end gap-3 pt-4">
-            <Button
-              onClick={onClose}
-              variant="ghost"
-            >
+            <Button onClick={onClose} variant="ghost">
               Đóng
             </Button>
             <Button
@@ -119,16 +131,14 @@ const StaffDetailModal = ({
             >
               Xóa
             </Button>
-            <Button onClick={() => onEdit(staff)}>
-              Chỉnh sửa
-            </Button>
+            <Button onClick={() => onEdit(staff)}>Chỉnh sửa</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Xác nhận xóa */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="max-w-sm rounded-xl p-6 space-y-4">
+        <DialogContent className="max-w-sm space-y-4 rounded-xl p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-destructive">
               Xác nhận xóa
@@ -163,10 +173,16 @@ const StaffDetailModal = ({
   );
 };
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
   <div className="space-y-2">
     <h4 className="text-sm font-semibold text-muted-foreground">{title}</h4>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
   </div>
 );
 

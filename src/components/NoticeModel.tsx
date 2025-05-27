@@ -55,11 +55,14 @@ const getPenaltyValue = async () => {
 };
 
 const updateLoanStatus = async (loan_transaction_id: number) => {
-  const res = await fetch("/api/reader/confirmloan", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ loan_transaction_id }),
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/confirmloan`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loan_transaction_id }),
+    },
+  );
 
   if (!res.ok) {
     console.error("Lỗi khi cập nhật trạng thái mượn:", await res.json());
@@ -67,11 +70,14 @@ const updateLoanStatus = async (loan_transaction_id: number) => {
 };
 
 const deleteLoanDetail = async (loan_detail_id: number) => {
-  const res = await fetch("/api/reader/deleteloandetail", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ loan_detail_id }),
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/deleteloandetail`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loan_detail_id }),
+    },
+  );
 
   if (!res.ok) {
     console.error("Lỗi khi xóa loan_detail:", await res.json());
@@ -88,7 +94,7 @@ export default function NoticeModal({
   open,
   onClose,
   numberToVietnameseWords,
-  onSuccess
+  onSuccess,
 }: Props) {
   const { toast } = useToast();
   const [penaltyRate, setPenaltyRate] = useState<number | null>(null);
@@ -108,7 +114,7 @@ export default function NoticeModal({
   const handleMarkAllReturned = async () => {
     setIsSaving(true);
     const uniqueTransactionIds = Array.from(
-      new Set(bookList.map((book) => book.loan_transaction_id))
+      new Set(bookList.map((book) => book.loan_transaction_id)),
     );
 
     await Promise.all(uniqueTransactionIds.map(updateLoanStatus));
@@ -122,7 +128,9 @@ export default function NoticeModal({
     setIsDeleting(loan_detail_id);
     const success = await deleteLoanDetail(loan_detail_id);
     if (success) {
-      const newBooks = bookList.filter((b) => b.loan_detail_id !== loan_detail_id);
+      const newBooks = bookList.filter(
+        (b) => b.loan_detail_id !== loan_detail_id,
+      );
       setBookList(newBooks);
       toast({ title: "Cập nhật thành công", variant: "success" });
       onSuccess?.();
@@ -135,7 +143,9 @@ export default function NoticeModal({
 
   const penaltyBooks = bookList.map((b) => {
     const dueDate = new Date(b.dueAt);
-    const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(
+      (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const overdueDays = Math.max(diffDays, 0);
     const daysToCharge = Math.max(overdueDays - 2, 0);
     const penalty = daysToCharge * penaltyRate;
@@ -146,23 +156,34 @@ export default function NoticeModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl text-primary font-bold">
+          <DialogTitle className="text-xl font-bold text-primary">
             THÔNG BÁO SÁCH QUÁ HẠN
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-2 text-sm">
-          <p>Ngày {today.getDate()} tháng {today.getMonth() + 1} năm {today.getFullYear()}</p>
-          <p><strong>Họ tên:</strong> {borrowerInfo.borrower}</p>
-          <p><strong>Ngày sinh:</strong> {borrowerInfo.birthdate}</p>
-          <p><strong>Địa chỉ:</strong> {borrowerInfo.address}</p>
-          <p><strong>Điện thoại:</strong> {borrowerInfo.phone}</p>
+          <p>
+            Ngày {today.getDate()} tháng {today.getMonth() + 1} năm{" "}
+            {today.getFullYear()}
+          </p>
+          <p>
+            <strong>Họ tên:</strong> {borrowerInfo.borrower}
+          </p>
+          <p>
+            <strong>Ngày sinh:</strong> {borrowerInfo.birthdate}
+          </p>
+          <p>
+            <strong>Địa chỉ:</strong> {borrowerInfo.address}
+          </p>
+          <p>
+            <strong>Điện thoại:</strong> {borrowerInfo.phone}
+          </p>
 
           <p className="mt-4 font-semibold">Danh sách mượn:</p>
           <div className="overflow-x-auto">
-            <table className="w-full table-auto border border-collapse text-sm">
+            <table className="w-full table-auto border-collapse border text-sm">
               <thead>
                 <tr className="bg-muted text-muted-foreground">
                   <th className="border px-2 py-1">STT</th>
@@ -179,17 +200,21 @@ export default function NoticeModal({
                     <td className="border px-2 py-1 text-center">{idx + 1}</td>
                     <td className="border px-2 py-1 text-center">{book.id}</td>
                     <td className="border px-2 py-1">{book.title}</td>
-                    <td className="border px-2 py-1 text-center">{book.overdueDays}</td>
+                    <td className="border px-2 py-1 text-center">
+                      {book.overdueDays}
+                    </td>
                     <td className="border px-2 py-1 text-right">
                       {book.penalty.toLocaleString()}đ
                     </td>
-                    <td className="border px-2 py-1 text-center space-x-2">
+                    <td className="space-x-2 border px-2 py-1 text-center">
                       <button
                         className="text-red-500 hover:text-red-700"
                         onClick={() => handleDelete(book.loan_detail_id)}
                         disabled={isDeleting === book.loan_detail_id}
                       >
-                        {isDeleting === book.loan_detail_id ? "Đang xóa..." : "Xóa"}
+                        {isDeleting === book.loan_detail_id
+                          ? "Đang xóa..."
+                          : "Xóa"}
                       </button>
                     </td>
                   </tr>
@@ -199,8 +224,7 @@ export default function NoticeModal({
           </div>
 
           <p className="mt-2">
-            Tổng tiền phạt:{" "}
-            <strong>{totalPenalty.toLocaleString()}đ</strong> (
+            Tổng tiền phạt: <strong>{totalPenalty.toLocaleString()}đ</strong> (
             <em>{numberToVietnameseWords(Math.round(totalPenalty))} đồng</em>)
           </p>
         </div>
@@ -209,8 +233,14 @@ export default function NoticeModal({
           <Button variant="secondary" onClick={onClose}>
             Đóng
           </Button>
-          <Button onClick={() => alert("Đã gửi thông báo!")}>Gửi thông báo</Button>
-          <Button variant="outline"  onClick={handleMarkAllReturned} disabled={isSaving}>
+          <Button onClick={() => alert("Đã gửi thông báo!")}>
+            Gửi thông báo
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleMarkAllReturned}
+            disabled={isSaving}
+          >
             {isSaving ? "Đang lưu..." : "Đã trả"}
           </Button>
         </DialogFooter>

@@ -40,10 +40,13 @@ const BookCopyModal = ({
     );
 
     try {
-      const res = await fetch("/api/book/addcopy", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/addcopy`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const result = await res.json();
 

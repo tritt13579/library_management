@@ -45,11 +45,14 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
   const handleDeleteConfirmed = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch("/api/reader/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reader_id: reader.reader_id }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/delete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reader_id: reader.reader_id }),
+        },
+      );
 
       const data = await res.json();
 
@@ -80,7 +83,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md lg:max-w-3xl max-h-full md:max-h-[90vh] sm:max-w-xl">
+        <DialogContent className="max-h-full max-w-md sm:max-w-xl md:max-h-[90vh] lg:max-w-3xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-primary">
               {reader.last_name} {reader.first_name}
@@ -89,7 +92,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
 
           <div className="flex flex-col gap-6 lg:flex-row">
             {/* Left: Info */}
-            <div className="lg:w-full flex flex-col h-full space-y-3 text-base text-muted-foreground">
+            <div className="flex h-full flex-col space-y-3 text-base text-muted-foreground lg:w-full">
               <p className="text-sm text-gray-400">ID: {reader.reader_id}</p>
 
               <Info label="Ngày sinh" value={reader.date_of_birth} />
@@ -100,8 +103,8 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
               <Info label="Email" value={reader.email} />
               <Info label="Số điện thoại" value={reader.phone} />
               <Info label="Địa chỉ" value={reader.address} />
-              
-              <div className="flex flex-wrap gap-3 mt-auto">
+
+              <div className="mt-auto flex flex-wrap gap-3">
                 <Button variant="outline" onClick={onClose}>
                   Đóng
                 </Button>
@@ -127,13 +130,13 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
 
             {/* Right: Avatar */}
             <div className="hidden lg:block lg:w-2/3">
-              <div className="aspect-square overflow-hidden rounded-xl shadow-lg border border-gray-200">
+              <div className="aspect-square overflow-hidden rounded-xl border border-gray-200 shadow-lg">
                 <Image
                   src={reader.photo_url || "/images/logo/avatar.jpg"}
                   alt="Ảnh độc giả"
                   width={400}
                   height={400}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               </div>
             </div>
@@ -143,7 +146,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
 
       {/* Confirm delete dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="max-w-sm p-6 space-y-4 rounded-xl">
+        <DialogContent className="max-w-sm space-y-4 rounded-xl p-6">
           <DialogHeader>
             <DialogTitle className="text-lg text-destructive">
               Xác nhận xóa
@@ -151,7 +154,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Bạn có chắc chắn muốn xóa độc giả{" "}
-            <span className="text-foreground font-semibold">
+            <span className="font-semibold text-foreground">
               {reader.last_name} {reader.first_name}
             </span>{" "}
             không? Hành động này không thể hoàn tác.

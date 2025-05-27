@@ -81,7 +81,7 @@ const allItems: MenuItem[] = [
   },
   {
     title: "Cài đặt",
-    url: "#",
+    url: "/staff/setting",
     icon: Settings,
     requiredPermission: "Cài đặt",
     children: [
