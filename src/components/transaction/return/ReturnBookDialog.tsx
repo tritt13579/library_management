@@ -429,9 +429,10 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
                 totalFine={totalFine}
                 paymentMethod={paymentMethod}
                 setPaymentMethod={setPaymentMethod}
+                fullName={selectedLoan.reader.name}
+                booksStatus={booksStatus}
               />
             )}
-
             {step === 4 && (
               <SuccessStep
                 totalFine={totalFine}
