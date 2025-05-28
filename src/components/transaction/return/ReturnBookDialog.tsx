@@ -57,11 +57,10 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
   }, [booksStatus]);
 
   const initializeData = async () => {
-    await Promise.all([
-      fetchConditions(),
-      fetchLateFeeRate(),
-      initializeBooksStatus(),
-    ]);
+    await Promise.all([fetchConditions(), fetchLateFeeRate()]);
+
+    // Initialize books status after fetching late fee rate
+    await initializeBooksStatus();
 
     setStep(1);
     setAllSelected(true);
@@ -101,9 +100,24 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       }
 
       setLateFeeRate(result.data);
+      return result.data; // Return the rate for immediate use
     } catch (error) {
       console.error("Error fetching late fee rate:", error);
+      return 0;
     }
+  };
+
+  const calculateLateFee = (dueDate: string, feeRate: number): number => {
+    const today = new Date();
+    const due = new Date(dueDate);
+
+    if (today > due) {
+      const daysLate = Math.ceil(
+        (today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      return daysLate * feeRate;
+    }
+    return 0;
   };
 
   const initializeBooksStatus = async () => {
@@ -141,17 +155,17 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
         throw new Error(result.error);
       }
 
-      const booksWithLateFee = result.data.map((bookDetail: any) => {
-        let lateFee = 0;
-        const today = new Date();
-        const dueDate = new Date(selectedLoan.dueDate);
+      // Get current late fee rate (use state if available, otherwise fetch)
+      let currentLateFeeRate = lateFeeRate;
+      if (currentLateFeeRate === 0) {
+        currentLateFeeRate = await fetchLateFeeRate();
+      }
 
-        if (today > dueDate) {
-          const daysLate = Math.ceil(
-            (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
-          );
-          lateFee = daysLate * lateFeeRate;
-        }
+      const booksWithLateFee = result.data.map((bookDetail: any) => {
+        const lateFee = calculateLateFee(
+          selectedLoan.dueDate,
+          currentLateFeeRate,
+        );
 
         return {
           ...bookDetail,
@@ -165,6 +179,11 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
       });
 
       setBooksStatus(booksWithLateFee);
+
+      // Force calculate total fine after setting books status
+      setTimeout(() => {
+        calculateTotalFineFromBooks(booksWithLateFee);
+      }, 0);
 
       if (booksWithLateFee.length === 0) {
         toast({
@@ -184,11 +203,15 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
   };
 
   const calculateTotalFine = () => {
+    calculateTotalFineFromBooks(booksStatus);
+  };
+
+  const calculateTotalFineFromBooks = (books: BookReturnStatus[]) => {
     let total = 0;
-    booksStatus.forEach((bookStatus) => {
+    books.forEach((bookStatus) => {
       if (bookStatus.isSelected) {
-        total += bookStatus.lateFee;
-        total += bookStatus.damageFee;
+        total += bookStatus.lateFee || 0;
+        total += bookStatus.damageFee || 0;
       }
     });
     setTotalFine(total);
@@ -406,9 +429,10 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
                 totalFine={totalFine}
                 paymentMethod={paymentMethod}
                 setPaymentMethod={setPaymentMethod}
+                fullName={selectedLoan.reader.name}
+                booksStatus={booksStatus}
               />
             )}
-
             {step === 4 && (
               <SuccessStep
                 totalFine={totalFine}

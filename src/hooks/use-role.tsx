@@ -20,7 +20,9 @@ export function useRole({
   useEffect(() => {
     async function fetchRole() {
       try {
-        const response = await fetch("/api/role");
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/role`,
+        );
         const data = await response.json();
 
         setRole(data.role);

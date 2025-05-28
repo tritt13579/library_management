@@ -55,7 +55,7 @@ const ReaderHeader = ({ user }: { user: any }) => {
                 <UserDropdown />
               ) : (
                 <Button asChild variant="outline">
-                  <Link href="/login">Login</Link>
+                  <Link href="/login">Đăng nhập</Link>
                 </Button>
               )}
             </div>

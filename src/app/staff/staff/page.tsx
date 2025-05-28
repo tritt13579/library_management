@@ -1,10 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import {
-  FolderPlusIcon,
-  Bars3Icon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import React, { useState, useEffect, useMemo } from "react";
+import { FolderPlusIcon, Loader2, Search, Filter, Users } from "lucide-react";
 import { supabaseClient } from "@/lib/client";
 import StaffFormModal from "@/components/StaffFormModal";
 import StaffDetailModal from "@/components/StaffDetailModel";
@@ -17,78 +13,184 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
+interface Role {
+  role_id: string;
+  role_name: string;
+}
+
+interface Staff {
+  staff_id: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  gender: string;
+  email: string;
+  role_id: string;
+  role?: Role;
+}
+
+interface StaffStats {
+  totalStaff: number;
+  maleStaff: number;
+  femaleStaff: number;
+}
+
+const normalizeString = (str: string): string => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+};
 
 const StaffPage = () => {
   const { toast } = useToast();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [stats, setStats] = useState<StaffStats>({
+    totalStaff: 0,
+    maleStaff: 0,
+    femaleStaff: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
 
-  const [role, setRole] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
-  const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
-  const [staffToEdit, setStaffToEdit] = useState<any | null>(null);
+  const supabase = supabaseClient();
 
-  const staffPerPage = 10;
-  const indexOfLast = currentPage * staffPerPage;
-  const indexOfFirst = indexOfLast - staffPerPage;
-
-  const filteredStaff = staff.filter((s) => {
-    const matchesCategory =
-      selectedCategory === "Tất cả" ||
-      s.role?.role_id?.toString() === selectedCategory.toString();
-
-    const fullName = `${s.last_name} ${s.first_name}`.toLowerCase();
-    const search = searchTerm.toLowerCase();
-
-    const matchesSearch =
-      s.staff_id.toString().includes(search) || fullName.includes(search);
-
-    return matchesCategory && matchesSearch;
-  });
-
-  const currentStaff = filteredStaff.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredStaff.length / staffPerPage);
+  const normalizedSearchTerm = useMemo(() => {
+    return normalizeString(searchTerm);
+  }, [searchTerm]);
 
   useEffect(() => {
-    const fetchRole = async () => {
-      const supabase = supabaseClient();
-      const { data, error } = await supabase.from("role").select("*");
-
-      if (error) {
-        console.error("Error fetching roles:", error);
-      } else {
-        setRole([{ role_name: "Tất cả", role_id: "Tất cả" }, ...data]);
-      }
-    };
-
-    fetchRole();
-  }, []);
-
-  useEffect(() => {
-    const fetchStaff = async () => {
-      const supabase = supabaseClient();
-      const { data, error } = await supabase
-        .from("staff")
-        .select("*, role:role_id(*)");
-
-      if (error) {
-        console.error("Error fetching staff:", error);
-      } else {
-        setStaff(data);
-      }
-    };
-
+    fetchRoles();
     fetchStaff();
   }, [refreshTrigger]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedRole]);
+
+  const fetchRoles = async () => {
+    try {
+      const { data, error } = await supabase.from("role").select("*");
+      if (error) throw error;
+      setRoles(data || []);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("staff")
+        .select("*, role:role_id(*)")
+        .order("staff_id", { ascending: false });
+
+      if (error) throw error;
+      setStaff(data || []);
+      calculateStats(data || []);
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateStats = (staffData: Staff[]) => {
+    const totalStaff = staffData.length;
+    const maleStaff = staffData.filter((s) => s.gender === "M").length;
+    const femaleStaff = staffData.filter((s) => s.gender === "F").length;
+
+    setStats({
+      totalStaff,
+      maleStaff,
+      femaleStaff,
+    });
+  };
+
+  const filteredStaff = useMemo(() => {
+    return staff.filter((staffMember) => {
+      // Search filter
+      const fullName = `${staffMember.last_name} ${staffMember.first_name}`;
+      const nameMatches = searchTerm
+        ? normalizeString(fullName).includes(normalizedSearchTerm)
+        : true;
+
+      const emailMatches = searchTerm
+        ? normalizeString(staffMember.email).includes(normalizedSearchTerm)
+        : true;
+
+      const idMatches = searchTerm
+        ? staffMember.staff_id.toString().includes(searchTerm)
+        : true;
+
+      const matchesSearch =
+        searchTerm === "" || nameMatches || emailMatches || idMatches;
+
+      // Role filter
+      const matchesRole =
+        selectedRole === "all" || staffMember.role_id === selectedRole;
+
+      return matchesSearch && matchesRole;
+    });
+  }, [staff, normalizedSearchTerm, selectedRole, searchTerm]);
+
+  const currentItems = useMemo(() => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    return filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredStaff, currentPage, itemsPerPage]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredStaff.length / itemsPerPage);
+  }, [filteredStaff.length, itemsPerPage]);
+
+  const displayInfo = useMemo(() => {
+    const indexOfFirstItem = (currentPage - 1) * itemsPerPage + 1;
+    const indexOfLastItem = Math.min(
+      currentPage * itemsPerPage,
+      filteredStaff.length,
+    );
+    return { indexOfFirstItem, indexOfLastItem };
+  }, [currentPage, itemsPerPage, filteredStaff.length]);
+
+  const paginate = (pageNumber: number) => {
+    if (pageNumber > 0 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   const handleSuccess = () => {
     setRefreshTrigger((prev) => prev + 1);
@@ -99,15 +201,15 @@ const StaffPage = () => {
     });
   };
 
-  const openModal = (mode: "add" | "detail" | "edit", staff?: any) => {
+  const openModal = (mode: "add" | "detail" | "edit", staff?: Staff) => {
     if (mode === "add") {
       setIsAddOpen(true);
       setStaffToEdit(null);
     } else if (mode === "detail") {
-      setSelectedStaff(staff);
+      setSelectedStaff(staff || null);
       setIsDetailOpen(true);
     } else if (mode === "edit") {
-      setStaffToEdit(staff);
+      setStaffToEdit(staff || null);
       setIsEditOpen(true);
     }
   };
@@ -125,69 +227,211 @@ const StaffPage = () => {
     closeModal();
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("vi-VN");
+  };
+
+  const getGenderLabel = (gender: string) => {
+    switch (gender) {
+      case "M":
+        return "Nam";
+      case "F":
+        return "Nữ";
+      default:
+        return "Khác";
+    }
+  };
+
+  const getGenderBadgeVariant = (gender: string) => {
+    switch (gender) {
+      case "M":
+        return "default";
+      case "F":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <span className="ml-2">Đang tải dữ liệu...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      {/* Bộ lọc + Tìm kiếm + Thêm */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="ID / Tên..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="min-w-[150px] flex-1 py-6"
-          />
-
-          <Select
-            value={selectedCategory}
-            onValueChange={(value) => setSelectedCategory(value)}
-          >
-            <SelectTrigger className="min-w-[150px] flex-1 py-6">
-              <SelectValue placeholder="Chọn chức vụ" />
-            </SelectTrigger>
-            <SelectContent>
-              {role.map((rol, index) => (
-                <SelectItem key={index} value={rol.role_id?.toString()}>
-                  {rol.role_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Quản lý nhân viên</h1>
+          <p className="text-muted-foreground">
+            Tổng số {stats.totalStaff} nhân viên ({stats.maleStaff} nam,{" "}
+            {stats.femaleStaff} nữ)
+          </p>
         </div>
-
-        <div className="hidden space-x-2 md:flex">
-          <Button
-            variant="outline"
-            onClick={() => openModal("add")}
-            className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
-          >
-            <FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />
-            <span className="text-sm">Thêm nhân viên</span>
-          </Button>
-        </div>
-
         <Button
-          variant="outline"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden flex justify-start p-4"
+          onClick={() => openModal("add")}
+          className="flex items-center space-x-2"
         >
-        {isMobileMenuOpen ? (
-          <XMarkIcon className="h-5 w-5" />
-          ) : (
-            <Bars3Icon className="h-5 w-5" />
-          )}
+          <FolderPlusIcon className="h-4 w-4" />
+          <span>Thêm nhân viên</span>
         </Button>
       </div>
 
-      {isMobileMenuOpen && (
-        <div className="mt-4 flex flex-col space-y-4 md:hidden">
-          <FilterButton
-            icon={<FolderPlusIcon className="h-4 w-4 text-[#0071BC]" />}
-            label="Thêm nhân viên"
-            onClick={() => openModal("add")}
-          />
-        </div>
-      )}
+      {/* Combined Filters and Table */}
+      <Card>
+        <CardContent className="pt-4">
+          {/* Filters */}
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex w-full items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm theo ID, tên, email..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
 
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-[200px]">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Chọn chức vụ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả chức vụ</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.role_id} value={role.role_id}>
+                      {role.role_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Chức vụ</TableHead>
+                <TableHead>Ngày sinh</TableHead>
+                <TableHead>Giới tính</TableHead>
+                <TableHead>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentItems.map((staffMember) => (
+                <TableRow
+                  key={staffMember.staff_id}
+                  className="cursor-pointer hover:bg-muted/50"
+                >
+                  <TableCell className="font-medium">
+                    {staffMember.staff_id}
+                  </TableCell>
+                  <TableCell>
+                    {staffMember.last_name} {staffMember.first_name}
+                  </TableCell>
+                  <TableCell>{staffMember.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {staffMember.role?.role_name || "Không rõ"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatDate(staffMember.date_of_birth)}</TableCell>
+                  <TableCell>
+                    <Badge variant={getGenderBadgeVariant(staffMember.gender)}>
+                      {getGenderLabel(staffMember.gender)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openModal("detail", staffMember)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      Xem chi tiết
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+
+        <CardFooter className="flex justify-between border-t p-4">
+          <div className="text-sm text-muted-foreground">
+            {filteredStaff.length > 0 ? (
+              <>
+                Hiển thị {displayInfo.indexOfFirstItem}-
+                {displayInfo.indexOfLastItem} trong tổng số{" "}
+                {filteredStaff.length} nhân viên
+              </>
+            ) : (
+              <>Không có nhân viên nào phù hợp với điều kiện tìm kiếm</>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Trước
+            </Button>
+
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageToShow;
+              if (totalPages <= 5) {
+                pageToShow = i + 1;
+              } else if (currentPage <= 3) {
+                pageToShow = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageToShow = totalPages - 4 + i;
+              } else {
+                pageToShow = currentPage - 2 + i;
+              }
+
+              return (
+                <Button
+                  key={pageToShow}
+                  variant={currentPage === pageToShow ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => paginate(pageToShow)}
+                >
+                  {pageToShow}
+                </Button>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Sau
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+
+      {/* Modals */}
       <StaffDetailModal
         isOpen={isDetailOpen}
         staff={selectedStaff}
@@ -207,117 +451,8 @@ const StaffPage = () => {
         closeAdd={closeModal}
         onSuccess={handleSuccess}
       />
-
-      <h1 className="mb-4 mt-6 text-2xl font-bold text-primary">
-        Danh sách nhân viên
-      </h1>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
-          <thead className="bg-gray-100">
-            <tr>
-              {[
-                "ID",
-                "Chức vụ",
-                "Họ và Tên",
-                "Ngày sinh",
-                "Giới tính",
-                "Email",
-                "Xem chi tiết",
-              ].map((header, i) => (
-                <th
-                  key={i}
-                  className="px-4 py-2 text-left text-sm font-medium text-gray-700"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-background">
-            {currentStaff.map((staff) => (
-              <tr key={staff.staff_id}>
-                <td className="px-4 py-2 text-sm">{staff.staff_id}</td>
-                <td className="px-4 py-2 text-sm">
-                  {staff.role?.role_name || "Không rõ"}
-                </td>
-                <td className="px-4 py-2 text-sm">
-                  {staff.last_name} {staff.first_name}
-                </td>
-                <td className="px-4 py-2 text-sm">{staff.date_of_birth}</td>
-                <td className="px-4 py-2 text-sm">
-                  {staff.gender === "F"
-                    ? "Nữ"
-                    : staff.gender === "M"
-                    ? "Nam"
-                    : "Khác"}
-                </td>
-                <td className="px-4 py-2 text-sm">{staff.email}</td>
-                <td
-                  onClick={() => openModal("detail", staff)}
-                  className="cursor-pointer px-4 py-2 text-sm text-[#0071BC] hover:underline"
-                >
-                  Xem
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Phân trang */}
-      <div className="mt-4 flex justify-center space-x-2">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="rounded border border-gray-300 px-3 py-1 text-sm text-primary hover:bg-gray-400 disabled:opacity-50"
-        >
-          Trước
-        </button>
-
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            className={`rounded border px-3 py-1 text-sm ${
-              currentPage === i + 1
-                ? "bg-[#0071BC] text-white"
-                : "border-gray-300 text-gray-700 hover:bg-gray-400"
-            }`}
-            onClick={() => setCurrentPage(i + 1)}
-          >
-            {i + 1}
-          </button>
-        ))}
-
-        <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          className="rounded border border-gray-300 px-3 py-1 text-sm text-primary hover:bg-gray-400 disabled:opacity-50"
-        >
-          Tiếp
-        </button>
-      </div>
     </div>
   );
 };
-
-const FilterButton = ({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className="flex items-center space-x-2 rounded-md border border-gray-300 bg-background px-3 py-2 shadow-sm transition hover:shadow-md"
-  >
-    {icon}
-    <span className="text-sm">{label}</span>
-  </button>
-);
 
 export default StaffPage;

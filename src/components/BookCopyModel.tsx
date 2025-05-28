@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 const BookCopyModal = ({
   isOpen,
@@ -40,28 +41,42 @@ const BookCopyModal = ({
     );
 
     try {
-      const res = await fetch("/api/book/addcopy", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/addcopy`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const result = await res.json();
 
       if (!res.ok) {
-        alert(result.error || "Lỗi khi thêm bản sao");
+        toast({
+          title: "Lỗi",
+          description: result.error || "Lỗi khi thêm bản sao",
+          variant: "destructive",
+        });
         return;
       }
 
-      alert("Thêm bản sao thành công");
+      toast({
+        title: "Thành công",
+        description: "Thêm bản sao thành công",
+        variant: "success",
+      });
       onSuccess();
       onClose();
       setAcquisitionDate("");
       setPrice("");
       setConditionId("1");
-      window.location.reload();
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu:", error);
-      alert("Lỗi hệ thống.");
+      toast({
+        title: "Lỗi",
+        description: "Lỗi hệ thống. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
     }
   };
 

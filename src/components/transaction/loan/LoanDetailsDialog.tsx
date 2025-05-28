@@ -203,21 +203,17 @@ export const LoanDetailsDialog: React.FC<LoanDetailsDialogProps> = ({
               <DialogFooter className="gap-2 sm:gap-0">
                 {selectedLoan.status !== "Đã trả" && (
                   <>
-                    <Button variant="outline" onClick={handleRenewDialogOpen}>
-                      <Clock className="mr-2 h-4 w-4" />
-                      Gia hạn mượn
-                    </Button>
+                    {selectedLoan.status !== "Quá hạn" && (
+                      <Button variant="outline" onClick={handleRenewDialogOpen}>
+                        <Clock className="mr-2 h-4 w-4" />
+                        Gia hạn mượn
+                      </Button>
+                    )}
                     <Button variant="default" onClick={handleReturnDialogOpen}>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
                       Trả sách
                     </Button>
                   </>
-                )}
-                {selectedLoan.status === "Đã trả" && (
-                  <Button variant="outline" onClick={closeDialog}>
-                    <History className="mr-2 h-4 w-4" />
-                    Lịch sử giao dịch
-                  </Button>
                 )}
                 <Button variant="secondary" onClick={closeDialog}>
                   Đóng
